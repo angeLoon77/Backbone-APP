@@ -2,6 +2,7 @@ import os
 import json
 
 from exercises import *
+from difflib import get_close_matches
 
 folder = os.path.dirname(os.path.abspath(__file__))
 path_data = os.path.join(folder, "data.json")
@@ -49,3 +50,25 @@ def next_goal_calculation(prs):
         next_goal[exercise] =  {"weight": goal_weight, "reps": goal_reps}
 
     return next_goal
+
+def process_workout(workout, prs, valid_exercises, path_data, data):
+    logged_prs = []
+
+    for exercise in workout["exercises"]:
+        exercise_name = exercise["name"].lower()
+
+        for series in exercise["sets"]:
+            has_pr_tag = any(tag["code"] == "PR" for tag in series["tags"])
+
+            if has_pr_tag:
+                weight = series.get("total_weight") or series.get("weight")
+                reps = series.get("reps")
+
+                success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
+                logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
+
+    if logged_prs:
+        data["prs"] = prs
+        save_data(path_data, data)
+
+    return logged_prs

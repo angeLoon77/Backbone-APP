@@ -1,11 +1,12 @@
 import flet as ft
 import main as mn
+import workout_parser as wp
 import exercises as es
 
 def main(page: ft.Page):
-    valid_exercises = es.list_exercises_en()
+    valid_exercises = mn.list_exercises_en()
     data = mn.load_data(mn.path_data)
-    prs = data.get("prs",{})
+    prs = data.get("prs", {})
 
     page.title = "Gym App Prototype"
     page.theme_mode = ft.ThemeMode.DARK
@@ -15,9 +16,7 @@ def main(page: ft.Page):
     page.padding = 0
     page.bgcolor = ft.Colors.BLACK
 
-
     pr_logs = ft.Column(spacing=10)
-
     def update_pr_logs():
         pr_logs.controls.clear()
         if not prs:
@@ -102,14 +101,53 @@ def main(page: ft.Page):
                         ),
                     )
                 )
-    update_pr_logs()
-    update_objectives()
+    workout_field = ft.TextField(
+    label="Let me Dig through your Workout!",
+    multiline=True,
+    min_lines=10,
+    max_lines=20,
+    width=380,
+    border_radius=10,
+    )
+    def process_pasted_workout(e):
+        text = workout_field.value
+
+        try:
+            workout = wp.parse_workout(text)
+        except ValueError as err:
+            page.show_dialog(
+                ft.SnackBar(content=ft.Text(str(err)), bgcolor=ft.Colors.RED_700)
+            )
+            page.update()
+            return
+
+        logged_prs = mn.process_workout(workout, prs, valid_exercises, mn.path_data, data)
+
+        prs_encontrados = [r for r in logged_prs if r["success"]]
+        prs_falhos = [r for r in logged_prs if not r["success"]]
+
+        resumo = f"{len(prs_encontrados)} PR(s) registrado(s)"
+        if prs_falhos:
+            resumo += f", {len(prs_falhos)} falharam"
+
+        page.show_dialog(
+            ft.SnackBar(
+                content=ft.Text(resumo),
+                bgcolor=ft.Colors.GREEN_700 if not prs_falhos else ft.Colors.ORANGE_700,
+            )
+        )
+        workout_field.value = ""
+
+
+        update_pr_logs()
+        update_objectives()
 
     tabs_bar = ft.TabBar(
         tabs=[
             ft.Tab(label="Your PRs", icon=ft.Icons.LIST_ALT),
             ft.Tab(label="Log PRs", icon=ft.Icons.ADD_CIRCLE_OUTLINE),
             ft.Tab(label="Next Objectives", icon=ft.Icons.FLAG_OUTLINED),
+            ft.Tab(label="Paste Workout", icon=ft.Icons.NOTE_ADD),
         ],
     )
 
@@ -132,13 +170,29 @@ def main(page: ft.Page):
                 ]),
                 padding=20,
             ),
-            ft.Container(content=goals_list, padding=20),
+            ft.Container(content=goals_list, padding=20),ft.Container(
+        content=ft.Column(
+        spacing=15,
+        controls=[
+            workout_field,
+            ft.ElevatedButton(
+                "Process Workout",
+                icon=ft.Icons.PLAY_ARROW,
+                width=380,
+                height=45,
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                on_click=process_pasted_workout,
+            ),
+        ],
+    ),
+    padding=20,
+),
         ],
     )
 
     tabs = ft.Tabs(
         selected_index=0,
-        length=3,
+        length=4,
         expand=True,
         content=ft.Column(expand=True, controls=[tabs_bar, tabs_view]),
     )

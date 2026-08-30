@@ -4,4 +4,4 @@ def exercises_list_ptbr():
 
 
 def list_exercises_en():
-    return ["Bench Press", "Bench Press Smith Machine", "Dumbbell Press", "Incline press", "Smith Incline Press","Dumbbell Incline Press", "Pec deck", "High to Low", "Low to High", "Leg Press"]
+    return ["Bench Press", "Bench Press Smith Machine", "Dumbbell Press", "Incline press", "Smith Incline Press","Dumbbell Incline Press", "Pec deck", "High to Low", "Low to High", "Leg Press", "Deadlift", "Squat"]
