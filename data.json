@@ -3,18 +3,6 @@
         "bench press": {
             "weight": 70.0,
             "reps": 5
-        },
-        "incline press": {
-            "weight": 24.0,
-            "reps": 6
-        },
-        "high to low": {
-            "weight": 50.0,
-            "reps": 9
-        },
-        "pec deck": {
-            "weight": 65.0,
-            "reps": 5
         }
     }
 }

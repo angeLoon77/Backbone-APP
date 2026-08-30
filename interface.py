@@ -8,22 +8,46 @@ def main(page: ft.Page):
     prs = data.get("prs",{})
 
     page.title = "Gym App Prototype"
+    page.theme_mode = ft.ThemeMode.DARK
+    page.theme = ft.Theme(color_scheme_seed=ft.Colors.DEEP_ORANGE)
+    page.window.width = 420
+    page.window.height = 750
+    page.padding = 0
+    page.bgcolor = ft.Colors.BLACK
 
-    pr_logs = ft.Column()
+
+    pr_logs = ft.Column(spacing=10)
 
     def update_pr_logs():
         pr_logs.controls.clear()
         if not prs:
-            pr_logs.controls.append(ft.Text("You Havent logged a PR yet!"))
+            pr_logs.controls.append(ft.Text("You Havent logged a PR yet!", italic=True, color=ft.Colors.GREY))
         else:
             for exercise, info in prs.items():
-                pr_logs.controls.append(ft.Text(f"{exercise.title()}: {info['weight']}kg {info['reps']}x "))
+                                pr_logs.controls.append(
+                    ft.Card(
+                        content=ft.Container(
+                            padding=15,
+                            content=ft.Row(
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                controls=[
+                                    ft.Column([
+                                        ft.Text(exercise.title(), weight=ft.FontWeight.BOLD, size=16),
+                                        ft.Text(f"{info['reps']} reps", color=ft.Colors.GREY),
+                                    ]),
+                                    ft.Text(f"{info['weight']}kg", size=20, weight=ft.FontWeight.BOLD,
+                                            color=ft.Colors.DEEP_ORANGE_300),
+                                ],
+                            ),
+                        ),
+                    )
+                )
+
 
     exercise_field = ft.AutoComplete(value="", suggestions=[ft.AutoCompleteSuggestion(key=ex, value= ex) for ex in valid_exercises],
                                      on_select=lambda e: None,)
-    weight_field = ft.TextField(label="Weight (kg)", width=300)
-    reps_field = ft.TextField(label="Reps", width=300)
-    message_log = ft.Text()
+    weight_field = ft.TextField(label="Weight (kg)", width=300, border_radius=10, prefix_icon=ft.Icons.FITNESS_CENTER)
+    reps_field = ft.TextField(label="Reps", width=300, border_radius=10, prefix_icon=ft.Icons.REPEAT)
 
     def save_pr(e):
         success, msg = mn.log_PR(
@@ -34,8 +58,12 @@ def main(page: ft.Page):
             valid_exercises,
         )
 
-        message_log.value = msg
-        message_log.color = ft.Colors.GREEN if success else ft.Colors.RED
+        page.show_dialog(
+        ft.SnackBar(
+        content=ft.Text(msg),
+        bgcolor=ft.Colors.GREEN_700 if success else ft.Colors.RED_700,
+    )
+)
 
         if success:
             data["prs"] = prs
@@ -48,25 +76,40 @@ def main(page: ft.Page):
 
         page.update()
 
-    goals_list = ft.Column()
+    goals_list = ft.Column(spacing=10)
 
     def update_objectives():
         goals_list.controls.clear()
         if not prs:
-            goals_list.controls.append(ft. Text("No Personal Best Logged yet!"))
+            goals_list.controls.append(ft. Text("No Personal Best Logged yet!", italic=True, color=ft.Colors.GREY))
         else:
             goals = mn.next_goal_calculation(prs)
             for exercise, next_goal in goals.items():
-                goals_list.controls.append(ft.Text(f"Your next Goal on: {exercise.title()} is {next_goal['weight']}kg and {next_goal['reps']} reps "))
-
+                goals_list.controls.append(
+                    ft.Card(
+                        content=ft.Container(
+                            padding=15,
+                            content=ft.Row(
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                controls=[
+                                    ft.Text(exercise.title(), weight=ft.FontWeight.BOLD, size=16),
+                                    ft.Text(
+                                        f"{next_goal['weight']}kg x {next_goal['reps']}",
+                                        color=ft.Colors.DEEP_ORANGE_300, weight=ft.FontWeight.BOLD,
+                                    ),
+                                ],
+                            ),
+                        ),
+                    )
+                )
     update_pr_logs()
     update_objectives()
 
     tabs_bar = ft.TabBar(
         tabs=[
-            ft.Tab(label="Your PRs"),
-            ft.Tab(label="Log PR"),
-            ft.Tab(label="Next Objectives"),
+            ft.Tab(label="Your PRs", icon=ft.Icons.LIST_ALT),
+            ft.Tab(label="Log PRs", icon=ft.Icons.ADD_CIRCLE_OUTLINE),
+            ft.Tab(label="Next Objectives", icon=ft.Icons.FLAG_OUTLINED),
         ],
     )
 
@@ -79,8 +122,13 @@ def main(page: ft.Page):
                     exercise_field,
                     weight_field,
                     reps_field,
-                    ft.ElevatedButton("Save", on_click=save_pr),
-                    message_log,
+                    ft.ElevatedButton(
+                         "Save",
+                         icon=ft.Icons.SAVE,
+                         width= 300, 
+                         height=45,
+                         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                         on_click=save_pr),
                 ]),
                 padding=20,
             ),
