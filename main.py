@@ -38,8 +38,8 @@ def log_workout(path, workout, raw_text):
     workouts_data = load_data(path)
     logs = workouts_data.get("logs", [])
 
-    if logs and logs[-1]["raw_text"] == raw_text:
-        return logs 
+    if any(log["raw_text"] == raw_text for log in logs):
+        return logs
 
     logs.append({
         "date": workout["date"],
