@@ -121,14 +121,15 @@ def main(page: ft.Page):
             page.update()
             return
 
+        mn.log_workout(mn.path_workouts, workout, text)
         logged_prs = mn.process_workout(workout, prs, valid_exercises, mn.path_data, data)
 
         prs_encontrados = [r for r in logged_prs if r["success"]]
         prs_falhos = [r for r in logged_prs if not r["success"]]
 
-        resumo = f"{len(prs_encontrados)} PR(s) registrado(s)"
+        resumo = f"{len(prs_encontrados)} PR(s) Logged(s)!"
         if prs_falhos:
-            resumo += f", {len(prs_falhos)} falharam"
+            resumo += f", {len(prs_falhos)} Failed!"
 
         page.show_dialog(
             ft.SnackBar(
@@ -139,8 +140,8 @@ def main(page: ft.Page):
         workout_field.value = ""
 
 
-        update_pr_logs()
-        update_objectives()
+    update_pr_logs()
+    update_objectives()
 
     tabs_bar = ft.TabBar(
         tabs=[

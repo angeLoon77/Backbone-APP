@@ -1,25 +1,19 @@
 import re
 from datetime import date
 
-if __name__ == "__main__":
-    text = ("""""")
-
 def parse_header(text):
-    pattern = r"(?:(\d{1,2})/(\d{1,2})\s*-\s*)?(.+)"
-    result = re.match(pattern, text.strip())
-
-    if not result:
-        return None
-
-    day, month, title = result.groups()
+    text = text.strip()
+    date_pattern = r"^(\d{1,2})/(\d{1,2})(?:\s*-\s*(.+))?$"
+    match = re.match(date_pattern, text)
     year = date.today().year
 
-    if day is None:
-        full_date = date.today().strftime("%d/%m/%Y")
-    else:
+    if match:
+        day, month, title = match.groups()
         full_date = f"{int(day):02d}/{int(month):02d}/{year}"
-
-    return {"date": full_date, "title": title}
+        return {"date": full_date, "title": title}
+    else:
+        full_date = date.today().strftime("%d/%m/%Y")
+        return {"date": full_date, "title": text}
 
 def parse_exercise_line(text):
     pattern = r"(.+?)(?:\s*-\s*([A-Z]))?$"
@@ -98,17 +92,25 @@ def parse_series_line(text):
 
 def parse_cardio_line(text):
     text = text.strip()
-    pattern = r"^(sem\s+)?cardio\s*:?\s*(.*)$"
-    result = re.match(pattern, text, re.IGNORECASE)
+    match = re.search(r"(?:(sem)\s+)?\bcardio\b", text, re.IGNORECASE)
 
-    if not result:
+    if not match:
         return None
-    
-    sem_prefix, detail = result.groups()
-    done = sem_prefix is None
-    detail = detail.strip() if detail else None
 
-    return {"done": done, "detail": detail}
+    done = match.group(1) is None
+
+    duration_match = re.search(r"(\d+(?:\.\d+)?)\s*m(?:in)?\b", text, re.IGNORECASE)
+    distance_match = re.search(r"(\d+(?:\.\d+)?)\s*km\b", text, re.IGNORECASE)
+
+    duration_min = float(duration_match.group(1)) if duration_match else None
+    distance_km = float(distance_match.group(1)) if distance_match else None
+
+    return {
+        "done": done,
+        "duration_min": duration_min,
+        "distance_km": distance_km,
+        "raw": text,
+    }
 
 def parse_workout(text):
     lines = [line for line in text.strip().split("\n") if line.strip()]
@@ -149,4 +151,6 @@ def parse_workout(text):
         "cardio": cardio,
     }
 
+if __name__ == "__main__":
+    text = ("""""")
     print(parse_workout(text))
