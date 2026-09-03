@@ -50,6 +50,10 @@ def log_workout(path, workout, raw_text):
     workouts_data["logs"] = logs
     save_data(path, workouts_data)
     return logs
+def get_workout_logs(path):
+    workouts_data = load_data(path)
+    logs = workouts_data.get("logs", [])
+    return list(reversed(logs))
 
 def next_goal_calculation(prs):
     next_goal = {}

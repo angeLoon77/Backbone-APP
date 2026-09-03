@@ -4,7 +4,7 @@ import workout_parser as wp
 import exercises as es
 
 def main(page: ft.Page):
-    valid_exercises = mn.list_exercises_en()
+    valid_exercises = es.list_exercises_en() or es.list_exercises_ptbr()
     data = mn.load_data(mn.path_data)
     prs = data.get("prs", {})
 
@@ -139,9 +139,52 @@ def main(page: ft.Page):
         )
         workout_field.value = ""
 
+        page.update()
+
+    workout_history = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO)
+
+    def update_workout_history():
+        workout_history.controls.clear()
+        logs = mn.get_workout_logs(mn.path_workouts)
+
+        if not logs:
+            workout_history.controls.append(
+                ft.Text("No workouts logged yet!", italic=True, color=ft.Colors.GREY)
+            )
+        else:
+            for log in logs:
+                title = log["title"] or "No Title"
+                cardio = log.get("cardio")
+                cardio_text = None
+                if cardio:
+                    if cardio["done"]:
+                        partes = []
+                        if cardio.get("duration_min"):
+                            partes.append(f"{cardio['duration_min']:g}min")
+                        if cardio.get("distance_km"):
+                            partes.append(f"{cardio['distance_km']:g}km")
+                        cardio_text = "Cardio: " + " / ".join(partes) if partes else "Cardio done"
+                    else:
+                        cardio_text = "No cardio"
+
+                workout_history.controls.append(
+                    ft.ExpansionTile(
+                        title=ft.Text(f"{log['date']} - {title}", weight=ft.FontWeight.BOLD),
+                        subtitle=ft.Text(cardio_text) if cardio_text else None,
+                        controls=[
+                            ft.Container(
+                                padding=15,
+                                content=ft.Text(log["raw_text"], selectable=True, color=ft.Colors.GREY_300),
+                            )
+                        ],
+                    )
+                )
+                
+                page.update()
 
     update_pr_logs()
     update_objectives()
+    update_workout_history()
 
     tabs_bar = ft.TabBar(
         tabs=[
@@ -149,6 +192,7 @@ def main(page: ft.Page):
             ft.Tab(label="Log PRs", icon=ft.Icons.ADD_CIRCLE_OUTLINE),
             ft.Tab(label="Next Objectives", icon=ft.Icons.FLAG_OUTLINED),
             ft.Tab(label="Paste Workout", icon=ft.Icons.NOTE_ADD),
+            ft.Tab(label="Workout Logs", icon=ft.Icons.FITNESS_CENTER),
         ],
     )
 
@@ -187,13 +231,13 @@ def main(page: ft.Page):
         ],
     ),
     padding=20,
-),
+),ft.Container(content=workout_history, padding=20),
         ],
     )
 
     tabs = ft.Tabs(
         selected_index=0,
-        length=4,
+        length=5,
         expand=True,
         content=ft.Column(expand=True, controls=[tabs_bar, tabs_view]),
     )
