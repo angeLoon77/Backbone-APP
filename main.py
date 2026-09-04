@@ -50,10 +50,39 @@ def log_workout(path, workout, raw_text):
     workouts_data["logs"] = logs
     save_data(path, workouts_data)
     return logs
+
+# talvez deletar o get_workout_logs e usar so o get_workout_logs_with_index, mas por enquanto vou deixar os dois
+
 def get_workout_logs(path):
     workouts_data = load_data(path)
     logs = workouts_data.get("logs", [])
     return list(reversed(logs))
+
+def get_workout_logs_with_index(path):
+    workouts_data = load_data(path)
+    logs = workouts_data.get("logs", [])
+    indexed = list(enumerate(logs))
+    return list(reversed(indexed))
+
+
+def delete_workout_log(path, index):
+    workouts_data = load_data(path)
+    logs = workouts_data.get("logs", [])
+    if 0 <= index < len(logs):
+        logs.pop(index)
+    workouts_data["logs"] = logs
+    save_data(path, workouts_data)
+    return logs
+
+
+def edit_workout_log(path, index, new_raw_text):
+    workouts_data = load_data(path)
+    logs = workouts_data.get("logs", [])
+    if 0 <= index < len(logs):
+        logs[index]["raw_text"] = new_raw_text
+    workouts_data["logs"] = logs
+    save_data(path, workouts_data)
+    return logs
 
 def next_goal_calculation(prs):
     next_goal = {}

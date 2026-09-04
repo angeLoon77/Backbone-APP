@@ -4,9 +4,22 @@ import workout_parser as wp
 import exercises as es
 
 def main(page: ft.Page):
-    valid_exercises = es.list_exercises_en() or es.list_exercises_ptbr()
+    valid_exercises = es.list_exercises_en() + es.list_exercises_ptbr()
     data = mn.load_data(mn.path_data)
     prs = data.get("prs", {})
+
+    def close_dialog(e):
+        page.pop_dialog()
+        page.update()
+
+    dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Notice"),
+        content=ft.Text("Closing this dialog..."),
+        actions=[
+            ft.TextButton("OK", on_click=close_dialog)
+        ]
+    )
 
     page.title = "Gym App Prototype"
     page.theme_mode = ft.ThemeMode.DARK
@@ -124,19 +137,27 @@ def main(page: ft.Page):
         mn.log_workout(mn.path_workouts, workout, text)
         logged_prs = mn.process_workout(workout, prs, valid_exercises, mn.path_data, data)
 
-        prs_encontrados = [r for r in logged_prs if r["success"]]
-        prs_falhos = [r for r in logged_prs if not r["success"]]
+        found_prs = [r for r in logged_prs if r["success"]]
+        failed_prs = [r for r in logged_prs if not r["success"]]
 
-        resumo = f"{len(prs_encontrados)} PR(s) Logged(s)!"
-        if prs_falhos:
-            resumo += f", {len(prs_falhos)} Failed!"
+        resumo = f"{len(found_prs)} PR(s) Logged(s)!"
+        if failed_prs:
+            resumo += f", {len(failed_prs)} Failed!"
 
         page.show_dialog(
             ft.SnackBar(
                 content=ft.Text(resumo),
-                bgcolor=ft.Colors.GREEN_700 if not prs_falhos else ft.Colors.ORANGE_700,
+                bgcolor=ft.Colors.GREEN_700 if not failed_prs else ft.Colors.ORANGE_700,
             )
         )
+
+        data["prs"] = prs
+        mn.save_data(mn.path_data, data)
+
+        update_pr_logs()
+        update_objectives()
+        update_workout_history()
+
         workout_field.value = ""
 
         page.update()
@@ -145,42 +166,71 @@ def main(page: ft.Page):
 
     def update_workout_history():
         workout_history.controls.clear()
-        logs = mn.get_workout_logs(mn.path_workouts)
+        indexed_logs = mn.get_workout_logs_with_index(mn.path_workouts)
 
-        if not logs:
+        if not indexed_logs:
             workout_history.controls.append(
-                ft.Text("No workouts logged yet!", italic=True, color=ft.Colors.GREY)
-            )
-        else:
-            for log in logs:
-                title = log["title"] or "No Title"
-                cardio = log.get("cardio")
-                cardio_text = None
-                if cardio:
-                    if cardio["done"]:
-                        partes = []
-                        if cardio.get("duration_min"):
-                            partes.append(f"{cardio['duration_min']:g}min")
-                        if cardio.get("distance_km"):
-                            partes.append(f"{cardio['distance_km']:g}km")
-                        cardio_text = "Cardio: " + " / ".join(partes) if partes else "Cardio done"
-                    else:
-                        cardio_text = "No cardio"
+                ft.Text("No Workout Logged Yet!", italic=True, color=ft.Colors.GREY)
+         )
+            return
 
-                workout_history.controls.append(
-                    ft.ExpansionTile(
-                        title=ft.Text(f"{log['date']} - {title}", weight=ft.FontWeight.BOLD),
-                        subtitle=ft.Text(cardio_text) if cardio_text else None,
-                        controls=[
-                            ft.Container(
-                                padding=15,
-                                content=ft.Text(log["raw_text"], selectable=True, color=ft.Colors.GREY_300),
-                            )
+        for index, log in indexed_logs:
+            title = log["title"] or "No Title"
+
+            def make_delete_handler(idx):
+                def handler(e):
+                    mn.delete_workout_log(mn.path_workouts, idx)
+                    update_workout_history()
+                    page.update()
+                return handler
+            def make_edit_handler(idx, current_text):
+                def handler(e):
+                    edit_field = ft.TextField(
+                        value=current_text, multiline=True, min_lines=10, max_lines=20,
+                )
+                    def save_edit(e):
+                        mn.edit_workout_log(mn.path_workouts, idx, edit_field.value)
+                        page.pop_dialog()
+                        update_workout_history()
+                        page.update()
+
+                    dialog = ft.AlertDialog(
+                        title=ft.Text("Editar treino"),
+                        content=edit_field,
+                        actions=[
+                            ft.TextButton("Cancelar", on_click=lambda e: page.pop_dialog()),
+                            ft.TextButton("Salvar", on_click=save_edit),
                         ],
                     )
-                )
+                    page.show_dialog(dialog)
+                return handler
+            
+            workout_history.controls.append(
+            ft.ExpansionTile(
+                title=ft.Text(f"{log['date']} - {title}", weight=ft.FontWeight.BOLD),
+                controls=[
+                    ft.Container(
+                        padding=15,
+                        content=ft.Column([
+                            ft.Text(log["raw_text"], selectable=True, color=ft.Colors.GREY_300),
+                            ft.Row([
+                                ft.IconButton(
+                                    icon=ft.Icons.EDIT,
+                                    on_click=make_edit_handler(index, log["raw_text"]),
+                                ),
+                                ft.IconButton(
+                                    icon=ft.Icons.DELETE,
+                                    icon_color=ft.Colors.RED_400,
+                                    on_click=make_delete_handler(index),
+                                ),
+                            ]),
+                        ]),
+                    )
+                ],
+            )
+        )
+            page.update()
                 
-                page.update()
 
     update_pr_logs()
     update_objectives()
