@@ -105,7 +105,7 @@ def parse_cardio_line(text):
     duration_min = float(duration_match.group(1)) if duration_match else None
     distance_km = float(distance_match.group(1)) if distance_match else None
 
-    return {
+    return { 
         "done": done,
         "duration_min": duration_min,
         "distance_km": distance_km,

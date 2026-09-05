@@ -75,11 +75,14 @@ def delete_workout_log(path, index):
     return logs
 
 
-def edit_workout_log(path, index, new_raw_text):
+def edit_workout_log(path, index, new_raw_text, workout):
     workouts_data = load_data(path)
     logs = workouts_data.get("logs", [])
     if 0 <= index < len(logs):
         logs[index]["raw_text"] = new_raw_text
+        logs[index]["date"] = workout["date"]
+        logs[index]["title"] = workout["title"]
+        logs[index]["cardio"] = workout.get("cardio")
     workouts_data["logs"] = logs
     save_data(path, workouts_data)
     return logs

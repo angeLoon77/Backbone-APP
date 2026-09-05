@@ -182,27 +182,47 @@ def main(page: ft.Page):
                     mn.delete_workout_log(mn.path_workouts, idx)
                     update_workout_history()
                     page.update()
+
                 return handler
+            
             def make_edit_handler(idx, current_text):
                 def handler(e):
                     edit_field = ft.TextField(
                         value=current_text, multiline=True, min_lines=10, max_lines=20,
                 )
                     def save_edit(e):
-                        mn.edit_workout_log(mn.path_workouts, idx, edit_field.value)
+                        new_text = edit_field.value
+
+                        try:
+                            corrected_workout = wp.parse_workout(new_text)
+                        except ValueError as err:
+                            page.show_dialog(ft.SnackBar(content=ft.Text(str(err)), bgcolor=ft.Colors.RED_700))
+
+                            page.update()
+
+                            return
+
+                        mn.edit_workout_log(mn.path_workouts, idx, new_text, corrected_workout)
+                        mn.process_workout(corrected_workout, prs, valid_exercises, mn.path_data, data)
+
                         page.pop_dialog()
+
+                        update_pr_logs()
+                        update_objectives()
                         update_workout_history()
+
                         page.update()
 
                     dialog = ft.AlertDialog(
-                        title=ft.Text("Editar treino"),
+                        title=ft.Text("Edit Workout"),
                         content=edit_field,
                         actions=[
-                            ft.TextButton("Cancelar", on_click=lambda e: page.pop_dialog()),
-                            ft.TextButton("Salvar", on_click=save_edit),
+                            ft.TextButton("Cancel", on_click=lambda e: page.pop_dialog()),
+                            ft.TextButton("Save", on_click=save_edit),
                         ],
                     )
                     page.show_dialog(dialog)
+
                 return handler
             
             workout_history.controls.append(
