@@ -118,7 +118,7 @@ def parse_workout(text):
     header = parse_header(lines[0])
     if header is None:
         raise ValueError
-    
+
     exercises = []
     current_exercise = None
     cardio = None
@@ -142,7 +142,11 @@ def parse_workout(text):
                 "equipment": exercise_info["equipment"],
                 "sets": [],
             }
-            exercises.append(current_exercise)
+            exercises.append(current_exercise)   
+
+    total_sets = sum(len(ex["sets"]) for ex in exercises)
+    if exercises and total_sets == 0:
+        raise ValueError("NO SETS FOUND -- NO WORKOUT LOGGED")
 
     return {
         "date": header["date"],
@@ -151,6 +155,57 @@ def parse_workout(text):
         "cardio": cardio,
     }
 
+# Talvez seja nescessário remover esse parser abaixo,  ele não é tanto pra progressão de carga, mas sim pra registrar o treino feito
+
+def parse_alt_workout(text):
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
+
+    exercises = []
+    current_exercise = None
+    current_weight = None
+
+    exercise_pattern = re.compile(r"^(.+?)\s*\d+\s*[×xX]\s*\d+(?:[\u2013-]\d+)?\s*-\s*(\d+(?:\.\d+)?)kg$")
+    series_pattern = re.compile(r"^\d+\s*s[ée]rie\s*(\d+)\s*repeti[çc][õo]es?$", re.IGNORECASE)
+
+    for line in lines:
+        ex_match = exercise_pattern.match(line)
+        if ex_match:
+            name, weight = ex_match.groups()
+            current_weight = float(weight)
+            current_exercise = {"name": name.strip(), "equipment": None, "sets": []}
+            exercises.append(current_exercise)
+            continue
+
+        series_match = series_pattern.match(line)
+        if series_match and current_exercise:
+            reps = float(series_match.group(1))
+            current_exercise["sets"].append({
+                "reps": reps,
+                "weight": current_weight,
+                "total_weight": None,
+                "note": None,
+                "tags": [],
+            })
+            continue    
+
+    return {
+        "date": date.today().strftime("%d/%m/%Y"),
+        "title": None,
+        "exercises": exercises,
+        "cardio": None,
+    }
+
+KNOWN_PARSERS = [parse_workout, parse_alt_workout]
+
+
+def parse_any_workout(text):
+    errors = []
+    for parser in KNOWN_PARSERS:
+        try:
+            return parser(text)
+        except Exception as e:
+            errors.append(str(e))
+    raise ValueError(f"No parser succeeded: {errors}")
+
 if __name__ == "__main__":
     text = ("""""")
-    print(parse_workout(text))

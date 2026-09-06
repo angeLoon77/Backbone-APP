@@ -122,11 +122,12 @@ def main(page: ft.Page):
     width=380,
     border_radius=10,
     )
+    
     def process_pasted_workout(e):
         text = workout_field.value
 
         try:
-            workout = wp.parse_workout(text)
+            workout = wp.parse_any_workout(text)
         except ValueError as err:
             page.show_dialog(
                 ft.SnackBar(content=ft.Text(str(err)), bgcolor=ft.Colors.RED_700)
@@ -194,7 +195,7 @@ def main(page: ft.Page):
                         new_text = edit_field.value
 
                         try:
-                            corrected_workout = wp.parse_workout(new_text)
+                            corrected_workout = wp.parse_any_workout(new_text)
                         except ValueError as err:
                             page.show_dialog(ft.SnackBar(content=ft.Text(str(err)), bgcolor=ft.Colors.RED_700))
 
