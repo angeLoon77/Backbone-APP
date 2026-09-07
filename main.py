@@ -110,16 +110,26 @@ def process_workout(workout, prs, valid_exercises, path_data, data):
 
     for exercise in workout["exercises"]:
         exercise_name = exercise["name"].lower()
+        sets = exercise["sets"]
+        if not sets:
+            continue
 
-        for series in exercise["sets"]:
-            has_pr_tag = any(tag["code"] == "PR" for tag in series["tags"])
+        is_new_exercise = exercise_name not in prs
 
-            if has_pr_tag:
-                weight = series.get("total_weight") or series.get("weight")
-                reps = series.get("reps")
-
-                success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
-                logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
+        if is_new_exercise:
+            best_set = max(sets, key=lambda s: s.get("total_weight") or s.get("weight", 0))
+            weight = best_set.get("total_weight") or best_set.get("weight")
+            reps = best_set.get("reps")
+            success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
+            logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
+        else:
+            for series in sets:
+                has_pr_tag = any(tag["code"] == "PR" for tag in series["tags"])
+                if has_pr_tag:
+                    weight = series.get("total_weight") or series.get("weight")
+                    reps = series.get("reps")
+                    success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
+                    logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
 
     if logged_prs:
         data["prs"] = prs

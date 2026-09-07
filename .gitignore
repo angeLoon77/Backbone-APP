@@ -1,5 +1,7 @@
 .venv/
+.flet/
 __pycache__/
 build/
+screenshots/
 data.json
 workouts.json
