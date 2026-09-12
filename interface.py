@@ -1,3 +1,4 @@
+import traceback
 import flet as ft
 import main as mn
 import workout_parser as wp
@@ -9,7 +10,6 @@ def main(page: ft.Page):
     data = mn.load_data(mn.path_data)
     prs = data.get("prs", {})
     
-
     def close_dialog(e):
         page.pop_dialog()
         page.update()
@@ -316,6 +316,6 @@ def main(page: ft.Page):
         content=ft.Column(expand=True, controls=[tabs_bar, tabs_view]),
     )
 
-    page.add(tabs)
+    page.add(ft.SafeArea(content=tabs, expand=True))
 
 ft.run(main) 

@@ -3,8 +3,10 @@ import json
 
 from exercises import *
 from difflib import get_close_matches
+from platformdirs import user_data_dir
 
-folder = os.path.dirname(os.path.abspath(__file__))
+folder = user_data_dir(appname="MyWorkoutApp", appauthor="MyName")
+os.makedirs(folder, exist_ok=True)
 path_data = os.path.join(folder, "data.json")
 path_workouts = os.path.join(folder, "workouts.json")
 

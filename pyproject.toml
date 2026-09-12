@@ -1,0 +1,15 @@
+[project]
+name = "Backbone"
+version = "1.0.0"
+dependencies = [
+    "flet",
+    "platformdirs==4.3.6",
+    "requests==2.34.2",
+    "qrcode==8.2"
+]
+[tool.flet]
+app.module = "interface"
+assets.dir = "assets"
+
+[tool.flet.icons]
+android = "assets/icon.png"
