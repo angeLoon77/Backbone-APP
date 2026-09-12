@@ -145,8 +145,8 @@ def parse_workout(text):
             exercises.append(current_exercise)   
 
     total_sets = sum(len(ex["sets"]) for ex in exercises)
-    if exercises and total_sets == 0:
-        raise ValueError("NO SETS FOUND -- NO WORKOUT LOGGED")
+    if not exercises or total_sets == 0:
+        raise ValueError("tr.t('no_sets_found')")
 
     return {
         "date": header["date"],
@@ -186,7 +186,11 @@ def parse_alt_workout(text):
                 "note": None,
                 "tags": [],
             })
-            continue    
+            continue
+
+    total_sets = sum(len(ex["sets"]) for ex in exercises)
+    if not exercises or total_sets == 0:
+        raise ValueError("No Exercise Found or No Sets Found in the Workout!")
 
     return {
         "date": date.today().strftime("%d/%m/%Y"),
@@ -194,7 +198,6 @@ def parse_alt_workout(text):
         "exercises": exercises,
         "cardio": None,
     }
-
 KNOWN_PARSERS = [parse_workout, parse_alt_workout]
 
 

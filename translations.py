@@ -20,7 +20,12 @@ TRANSLATIONS = {
         "save_button": "Salvar",
         "process_workout_button": "Processar Treino",
         "workout_field_label": "Deixe-me analisar seu treino!",
+        'workout_too_long': "O treino não pode ter mais de {max_length} caracteres!",
+        "workout_hint_example": "Ex: 28/08 - treino de peito\nsupino\n10x40kg\n8x60kg - F, PR",
 
+
+        "empty_workout_error": "O campo de treino não pode estar vazio!",
+        "no_sets_found": "Nenhuma Serie encontrada no treino!",
         "edit_workout_title": "Editar Treino",
         "cancel_button": "Cancelar",
 
@@ -48,7 +53,12 @@ TRANSLATIONS = {
         "save_button": "Save",
         "process_workout_button": "Process Workout",
         "workout_field_label": "Let me dig through your workout!",
+        "empty_workout_error": "Workout field cannot be empty!",
+        "no_sets_found": "No sets found in the workout!",
+        'workout_too_long': "Workout cannot exceed {max_length} characters!",
+        'workout_hint_example': "Ex: 08/28 - chest day\nbench press\n10x40kg\n8x60kg - F, PR",
 
+        
         "edit_workout_title": "Edit Workout",
         "cancel_button": "Cancel",
 
@@ -59,7 +69,7 @@ TRANSLATIONS = {
     },
 }
 
-CURRENT_LANG = "pt" # <--- trocar idioma aqui 
+CURRENT_LANG = "en" # <--- trocar idioma aqui pt/en
 
 
 def t(key, **kwargs):

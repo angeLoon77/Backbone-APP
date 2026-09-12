@@ -59,10 +59,19 @@ def main(page: ft.Page):
                 )
 
 
-    exercise_field = ft.AutoComplete(value="", suggestions=[ft.AutoCompleteSuggestion(key=ex, value= ex) for ex in valid_exercises],
+    exercise_field = ft.AutoComplete(value="", 
+                                     label=tr.t("exercise_label"),
+                                     suggestions=[ft.AutoCompleteSuggestion(key=ex, value= ex) for ex in valid_exercises],
                                      on_select=lambda e: None, width=300)
-    weight_field = ft.TextField(label=tr.t("weight_label"), width=300, border_radius=10, prefix_icon=ft.Icons.FITNESS_CENTER)
-    reps_field = ft.TextField(label=tr.t("reps_label"), width=300, border_radius=10, prefix_icon=ft.Icons.REPEAT)
+    weight_field = ft.TextField(label=tr.t("weight_label"), 
+                                hint_text="Ex: 60",
+                                width=300, 
+                                border_radius=10, prefix_icon=ft.Icons.FITNESS_CENTER)
+    reps_field = ft.TextField(label=tr.t("reps_label"), 
+                              hint_text="Ex: 10",
+                              width=300, 
+                              border_radius=10, 
+                              prefix_icon=ft.Icons.REPEAT)
 
     def save_pr(e):
         success, msg = mn.log_PR(
@@ -119,16 +128,32 @@ def main(page: ft.Page):
                 )
     workout_field = ft.TextField(
     label=tr.t("workout_field_label"),
+    hint_text=tr.t("workout_hint_example"),
     multiline=True,
     min_lines=10,
     max_lines=20,
     width=380,
     border_radius=10,
     )
+
+    MAX_WORKOUT_LENGTH = 10000  # Define a maximum length for the workout text
     
     def process_pasted_workout(e):
         text = workout_field.value
 
+        if not text or not text.strip():
+            page.show_dialog(
+                ft.SnackBar(content=ft.Text(tr.t("empty_workout_error")), bgcolor="#ff0000")
+            )
+            page.update()
+            return 
+
+        if len(text) > MAX_WORKOUT_LENGTH:
+            page.show_dialog(
+                ft.SnackBar(content=ft.Text(f"{tr.t('workout_too_long', max_length=MAX_WORKOUT_LENGTH)}"), bgcolor="#ff0000")
+            )
+            page.update()
+            return
         try:
             workout = wp.parse_any_workout(text)
         except ValueError as err:

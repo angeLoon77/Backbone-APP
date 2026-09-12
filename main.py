@@ -32,6 +32,9 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises):
         return False, "Invalid Numeric Value"
     if weight < 0 or reps < 0:
         return False, "Value must be 1 or More"
+
+    if reps > 99:
+        return False, "Reps must be 2 digits or less"
         
     prs[exercise] = {"weight": weight, "reps": reps}
     return True, f"Your PR on {exercise.title()} is {weight}kg {reps:g}x reps!" 
