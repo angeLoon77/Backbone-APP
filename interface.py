@@ -33,25 +33,43 @@ def main(page: ft.Page):
     page.window.resizable = True
 
     pr_logs = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
+
     def update_pr_logs():
         pr_logs.controls.clear()
         if not prs:
             pr_logs.controls.append(ft.Text(tr.t("no_pr_logged"), italic=True, color=ft.Colors.GREY))
         else:
             for exercise, info in prs.items():
-                                pr_logs.controls.append(
+
+                def make_delete_pr_handler(ex_name):
+                    def handler(e):
+                        mn.delete_pr(mn.path_data, data, ex_name)
+                        update_pr_logs()
+                        update_objectives()
+                        page.update()
+                    return handler
+
+                pr_logs.controls.append(
                     ft.Card(
                         content=ft.Container(
                             padding=15,
                             content=ft.Row(
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                 controls=[
                                     ft.Column([
                                         ft.Text(exercise.title(), weight=ft.FontWeight.BOLD, size=16),
                                         ft.Text(f"{info['reps']} reps", color=ft.Colors.GREY),
                                     ]),
-                                    ft.Text(f"{info['weight']}kg", size=20, weight=ft.FontWeight.BOLD,
-                                            color="#03a800"),
+                                    ft.Row([
+                                        ft.Text(f"{info['weight']}kg", size=20, weight=ft.FontWeight.BOLD,
+                                                color="#03a800"),
+                                        ft.IconButton(
+                                            icon=ft.Icons.DELETE,
+                                            icon_color=ft.Colors.RED_400,
+                                            on_click=make_delete_pr_handler(exercise),
+                                        ),
+                                    ]),
                                 ],
                             ),
                         ),
@@ -60,7 +78,6 @@ def main(page: ft.Page):
 
 
     exercise_field = ft.AutoComplete(value="", 
-                                     label=tr.t("exercise_label"),
                                      suggestions=[ft.AutoCompleteSuggestion(key=ex, value= ex) for ex in valid_exercises],
                                      on_select=lambda e: None, width=300)
     weight_field = ft.TextField(label=tr.t("weight_label"), 

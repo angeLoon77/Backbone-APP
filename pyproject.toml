@@ -1,6 +1,6 @@
 [project]
 name = "Backbone"
-version = "1.0.0"
+version = "1.0.05a"
 dependencies = [
     "flet",
     "platformdirs==4.3.6",

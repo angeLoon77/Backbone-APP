@@ -39,6 +39,14 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises):
     prs[exercise] = {"weight": weight, "reps": reps}
     return True, f"Your PR on {exercise.title()} is {weight}kg {reps:g}x reps!" 
 
+def delete_pr(path, data, exercise_name):
+    prs = data.get("prs", {})
+    if exercise_name in prs:
+        del prs[exercise_name]
+    data["prs"] = prs
+    save_data(path, data)
+    return prs    
+
 def log_workout(path, workout, raw_text):
     workouts_data = load_data(path)
     logs = workouts_data.get("logs", [])
@@ -141,3 +149,6 @@ def process_workout(workout, prs, valid_exercises, path_data, data):
         save_data(path_data, data)
 
     return logged_prs
+
+print("DATA:", os.path.abspath(path_data))
+print("WORKOUTS:", os.path.abspath(path_workouts))

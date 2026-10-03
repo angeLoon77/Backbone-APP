@@ -188,6 +188,8 @@ def parse_alt_workout(text):
             })
             continue
 
+    # Check if any exercises were found and if they contain sets
+
     total_sets = sum(len(ex["sets"]) for ex in exercises)
     if not exercises or total_sets == 0:
         raise ValueError("No Exercise Found or No Sets Found in the Workout!")
