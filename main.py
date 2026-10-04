@@ -5,7 +5,7 @@ from exercises import *
 from difflib import get_close_matches
 from platformdirs import user_data_dir
 
-folder = user_data_dir(appname="MyWorkoutApp", appauthor="MyName")
+folder = user_data_dir(appname="BackBone", appauthor="angeLoon DEV")
 os.makedirs(folder, exist_ok=True)
 path_data = os.path.join(folder, "data.json")
 path_workouts = os.path.join(folder, "workouts.json")
@@ -19,6 +19,8 @@ def load_data(path):
 def save_data(path, data):
     with open (path, "w") as f:
         json.dump(data, f, indent=4)
+
+# Function to log a personal record (PR) for a specific exercise, validating the input and updating the PRs dictionary
 
 def log_PR(exercise, weight_input, reps_input, prs, valid_exercises):
     valid_exercises_lower = [ex.lower() for ex in valid_exercises]
@@ -39,6 +41,8 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises):
     prs[exercise] = {"weight": weight, "reps": reps}
     return True, f"Your PR on {exercise.title()} is {weight}kg {reps:g}x reps!" 
 
+# Function to delete a PR entry for a specific exercise from the data and save the updated data back to the file
+
 def delete_pr(path, data, exercise_name):
     prs = data.get("prs", {})
     if exercise_name in prs:
@@ -46,6 +50,8 @@ def delete_pr(path, data, exercise_name):
     data["prs"] = prs
     save_data(path, data)
     return prs    
+
+# Function to log a workout entry, ensuring no duplicates based on raw text
 
 def log_workout(path, workout, raw_text):
     workouts_data = load_data(path)
@@ -71,12 +77,15 @@ def get_workout_logs(path):
     logs = workouts_data.get("logs", [])
     return list(reversed(logs))
 
+# Function to get workout logs with their index in the list, useful for editing or deleting specific entries
+
 def get_workout_logs_with_index(path):
     workouts_data = load_data(path)
     logs = workouts_data.get("logs", [])
     indexed = list(enumerate(logs))
     return list(reversed(indexed))
 
+# Function to delete a workout log entry by index
 
 def delete_workout_log(path, index):
     workouts_data = load_data(path)
@@ -87,6 +96,7 @@ def delete_workout_log(path, index):
     save_data(path, workouts_data)
     return logs
 
+# Function to edit a workout log entry, updating its raw text and associated workout data
 
 def edit_workout_log(path, index, new_raw_text, workout):
     workouts_data = load_data(path)
@@ -99,6 +109,8 @@ def edit_workout_log(path, index, new_raw_text, workout):
     workouts_data["logs"] = logs
     save_data(path, workouts_data)
     return logs
+
+# Function to calculate the next goal based on current PRs (I NEED TO IMPROVE THIS FUNCTION, IT'S NOT PERFECT, BUT IT'S A START)
 
 def next_goal_calculation(prs):
     next_goal = {}
@@ -118,6 +130,17 @@ def next_goal_calculation(prs):
 
     return next_goal
 
+# Function to determine if a new set beats the current personal record (PR) for a given exercise
+
+def beats_current_pr(prs, exercise_name, weight, reps):
+    current = prs.get(exercise_name)
+    if not current:
+        return True
+    if weight != current["weight"]:
+        return weight > current["weight"]
+    return reps > current["reps"]
+
+# Registers a PR when the best valid set of an exercise beats the stored one
 def process_workout(workout, prs, valid_exercises, path_data, data):
     logged_prs = []
 
@@ -127,28 +150,24 @@ def process_workout(workout, prs, valid_exercises, path_data, data):
         if not sets:
             continue
 
-        is_new_exercise = exercise_name not in prs
+        eligible = [
+            s for s in sets
+            if s.get("reps") is not None
+            and not any(tag["code"] == "W" for tag in s["tags"])
+        ]
+        if not eligible:
+            continue
 
-        if is_new_exercise:
-            best_set = max(sets, key=lambda s: s.get("total_weight") or s.get("weight", 0))
-            weight = best_set.get("total_weight") or best_set.get("weight")
-            reps = best_set.get("reps")
+        best_set = max(eligible, key=lambda s: (s.get("total_weight") or s.get("weight", 0), s["reps"]))
+        weight = best_set.get("total_weight") or best_set.get("weight")
+        reps = best_set["reps"]
+
+        if beats_current_pr(prs, exercise_name, weight, reps):
             success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
             logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
-        else:
-            for series in sets:
-                has_pr_tag = any(tag["code"] == "PR" for tag in series["tags"])
-                if has_pr_tag:
-                    weight = series.get("total_weight") or series.get("weight")
-                    reps = series.get("reps")
-                    success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
-                    logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
 
     if logged_prs:
         data["prs"] = prs
         save_data(path_data, data)
 
     return logged_prs
-
-print("DATA:", os.path.abspath(path_data))
-print("WORKOUTS:", os.path.abspath(path_workouts))

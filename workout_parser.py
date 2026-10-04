@@ -48,6 +48,7 @@ def parse_tag(tag_str):
 
     return {"code": None, "value": None, "note": tag_str}
 
+
 def parse_series_line(text):
     text = text.strip()
 
@@ -59,7 +60,7 @@ def parse_series_line(text):
         return {
             "reps_left": float(left_reps),
             "reps_right": float(right_reps),
-            "weight": int(weight),
+            "weight": float(weight),
             "total_weight": None,
             "note": None,
             "tags": tags,
@@ -146,7 +147,7 @@ def parse_workout(text):
 
     total_sets = sum(len(ex["sets"]) for ex in exercises)
     if not exercises or total_sets == 0:
-        raise ValueError("tr.t('no_sets_found')")
+        raise ValueError
 
     return {
         "date": header["date"],
