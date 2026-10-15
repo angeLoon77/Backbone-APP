@@ -1,6 +1,8 @@
 import os
 import json
 
+import database as db
+import datetime
 from exercises import *
 from difflib import get_close_matches
 from platformdirs import user_data_dir
@@ -22,13 +24,13 @@ def save_data(path, data):
 
 # Function to log a personal record (PR) for a specific exercise, validating the input and updating the PRs dictionary
 
-def log_PR(exercise, weight_input, reps_input, prs, valid_exercises):
+def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
     valid_exercises_lower = [ex.lower() for ex in valid_exercises]
     if exercise not in valid_exercises_lower:
         return False, f"{exercise} does not exist"
 
     try:
-        weight = float(weight_input) 
+        weight = float(weight_input)
         reps = float(reps_input)
     except ValueError:
         return False, "Invalid Numeric Value"
@@ -37,8 +39,19 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises):
 
     if reps > 99:
         return False, "Reps must be 2 digits or less"
-        
-    prs[exercise] = {"weight": weight, "reps": reps}
+
+    exercise_id = db.get_exercise_id(exercise)
+    if exercise_id is None:
+        return False, f"{exercise} does not exist"
+
+    if date is None:
+        date = datetime.date.today().isoformat()
+
+    db.add_pr(1, exercise_id, weight, reps, date)
+
+    prs.clear()
+    prs.update(db.get_prs(1))
+
     return True, f"Your PR on {exercise.title()} is {weight}kg {reps:g}x reps!" 
 
 # Function to delete a PR entry for a specific exercise from the data and save the updated data back to the file

@@ -1,8 +1,10 @@
 import sqlite3
-from pathlib import Path
+from platformdirs import user_data_dir
+import os
 
-base_dir = Path(__file__).resolve().parent
-db_path = base_dir / "database.db"
+folder = user_data_dir(appname="BackBone", appauthor="angeLoon DEV")
+os.makedirs(folder, exist_ok=True)
+db_path = os.path.join(folder, "database.db")
 
 VALID_TABLES = ["exercises", "prs"]
 
@@ -10,6 +12,12 @@ def get_connection():
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+def init_db():
+    create_exercise_table()
+    create_prs_table()
+    for exercise, muscle_group in EXERCISES:
+        add_exercise(exercise, muscle_group)
 
 def create_exercise_table():
     conn = get_connection()
@@ -45,7 +53,7 @@ def add_exercise(name, muscle_group):
     conn = get_connection()
     conn.execute(
         "INSERT OR IGNORE INTO exercises (name, muscle_group) VALUES (?, ?)",
-        (name.title(), muscle_group),
+        (name.lower(), muscle_group),
     )
     conn.commit()
     conn.close()
@@ -59,6 +67,20 @@ def add_pr(user_id, exercise_id, weight, reps, date):
     conn.commit()
     conn.close()
 
+def get_prs(user_id):
+    conn = get_connection()
+    cursor = conn.execute(""" 
+    SELECT exercises.name, prs.weight, prs.reps
+    FROM prs JOIN exercises ON prs.exercise_id = exercises.id
+    WHERE prs.user_id = ?
+    ORDER BY prs.weight, prs.reps""", (user_id,))
+    rows = cursor.fetchall()
+    prs = {}
+    for name, weight, reps in rows:
+        prs[name.lower()] = {"weight": weight, "reps": reps}
+    conn.close()
+    return prs
+
 def get_prs_by_muscle_group(user_id, muscle_group):
     conn = get_connection()
     cursor = conn.execute(""" 
@@ -67,6 +89,13 @@ def get_prs_by_muscle_group(user_id, muscle_group):
     prs = cursor.fetchall()
     conn.close()
     return prs
+
+def get_exercise_id(name):
+    conn = get_connection()
+    cursor = conn.execute("SELECT id FROM exercises WHERE LOWER(name) = ?", (name.lower(),))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
 
 def get_exercises():
     conn = get_connection()
@@ -147,5 +176,5 @@ EXERCISES = [
 ]
 
 if __name__ == "__main__":
-    add_pr(1, 10, 200, 12, "2026-10-15")
-    print(get_prs_by_muscle_group(1, "chest"))
+    init_db()
+    print(len(get_exercises()))

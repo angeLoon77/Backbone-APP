@@ -2,14 +2,15 @@ import traceback
 import flet as ft
 import main as mn
 import workout_parser as wp
-import exercises as es
+import database as db
 import translations as tr
 
 def main(page: ft.Page):
-    valid_exercises = es.list_exercises_en() + es.list_exercises_ptbr()
     data = mn.load_data(mn.path_data)
-    prs = data.get("prs", {})
-    
+    db.init_db()
+    valid_exercises = [name for name, group in db.get_exercises()]
+    prs = db.get_prs(1)  
+
     def close_dialog(e):
         page.pop_dialog()
         page.update()
