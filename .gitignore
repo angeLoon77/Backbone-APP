@@ -5,3 +5,5 @@ build/
 screenshots/
 data.json
 workouts.json
+pyproject.toml
+requirements.txt
