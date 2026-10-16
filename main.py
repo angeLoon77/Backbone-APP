@@ -153,9 +153,16 @@ def beats_current_pr(prs, exercise_name, weight, reps):
         return weight > current["weight"]
     return reps > current["reps"]
 
+def to_iso_date(date_text):
+    try:
+        return datetime.datetime.strptime(date_text, "%d/%m/%Y").date().isoformat()
+    except (ValueError, TypeError):
+        return None
+
 # Registers a PR when the best valid set of an exercise beats the stored one
 def process_workout(workout, prs, valid_exercises):
     logged_prs = []
+    date = to_iso_date(workout.get("date"))
 
     for exercise in workout["exercises"]:
         exercise_name = exercise["name"].lower()
@@ -176,7 +183,7 @@ def process_workout(workout, prs, valid_exercises):
         reps = best_set["reps"]
 
         if beats_current_pr(prs, exercise_name, weight, reps):
-            success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
+            success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises, date)
             logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
 
     return logged_prs

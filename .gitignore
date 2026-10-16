@@ -3,6 +3,7 @@
 __pycache__/
 build/
 screenshots/
+assets/
 data.json
 workouts.json
 pyproject.toml

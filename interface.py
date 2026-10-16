@@ -1,4 +1,3 @@
-import traceback
 import flet as ft
 import main as mn
 import workout_parser as wp
@@ -6,29 +5,16 @@ import database as db
 import translations as tr
 
 def main(page: ft.Page):
-    data = mn.load_data(mn.path_data)
     db.init_db()
     valid_exercises = [name for name, group in db.get_exercises()]
     prs = db.get_prs(1)  
-
-    def close_dialog(e):
-        page.pop_dialog()
-        page.update()
-
-    dialog = ft.AlertDialog(
-        modal=True,
-        title=ft.Text("Notice"),
-        content=ft.Text("Closing this dialog..."),
-        actions=[
-            ft.TextButton("OK", on_click=close_dialog)
-        ]
-    )
 
     page.title = tr.t("app_title")
     page.theme_mode = ft.ThemeMode.DARK
     page.theme = ft.Theme(color_scheme_seed="#03a800")
     page.window.width = 420
     page.window.height = 750
+    page.window.icon = "assets/icon.ico"
     page.padding = 0
     page.bgcolor = ft.Colors.BLACK
     page.window.resizable = True
