@@ -44,7 +44,7 @@ def main(page: ft.Page):
 
                 def make_delete_pr_handler(ex_name):
                     def handler(e):
-                        mn.delete_pr(mn.path_data, data, ex_name)
+                        mn.delete_pr(ex_name, prs)
                         update_pr_logs()
                         update_objectives()
                         page.update()
@@ -108,8 +108,6 @@ def main(page: ft.Page):
 )
 
         if success:
-            data["prs"] = prs
-            mn.save_data(mn.path_data, data)
             update_pr_logs()
             update_objectives()
             exercise_field.value = ""
@@ -182,7 +180,7 @@ def main(page: ft.Page):
             return
 
         mn.log_workout(mn.path_workouts, workout, text)
-        logged_prs = mn.process_workout(workout, prs, valid_exercises, mn.path_data, data)
+        logged_prs = mn.process_workout(workout, prs, valid_exercises)
 
         found_prs = [r for r in logged_prs if r["success"]]
         failed_prs = [r for r in logged_prs if not r["success"]]
@@ -197,9 +195,6 @@ def main(page: ft.Page):
                 bgcolor="#03a800" if not failed_prs else "#ff0000",
             )
         )
-
-        data["prs"] = prs
-        mn.save_data(mn.path_data, data)
 
         update_pr_logs()
         update_objectives()
@@ -250,7 +245,7 @@ def main(page: ft.Page):
                             return
 
                         mn.edit_workout_log(mn.path_workouts, idx, new_text, corrected_workout)
-                        mn.process_workout(corrected_workout, prs, valid_exercises, mn.path_data, data)
+                        mn.process_workout(corrected_workout, prs, valid_exercises)
 
                         page.pop_dialog()
 

@@ -56,13 +56,13 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
 
 # Function to delete a PR entry for a specific exercise from the data and save the updated data back to the file
 
-def delete_pr(path, data, exercise_name):
-    prs = data.get("prs", {})
-    if exercise_name in prs:
-        del prs[exercise_name]
-    data["prs"] = prs
-    save_data(path, data)
-    return prs    
+def delete_pr(exercise_name,prs):
+    exercise_id = db.get_exercise_id(exercise_name)
+    if exercise_id is not None:
+        db.delete_prs_by_exercise(1, exercise_id)
+    prs.clear()
+    prs.update(db.get_prs(1))
+    return prs
 
 # Function to log a workout entry, ensuring no duplicates based on raw text
 
@@ -154,7 +154,7 @@ def beats_current_pr(prs, exercise_name, weight, reps):
     return reps > current["reps"]
 
 # Registers a PR when the best valid set of an exercise beats the stored one
-def process_workout(workout, prs, valid_exercises, path_data, data):
+def process_workout(workout, prs, valid_exercises):
     logged_prs = []
 
     for exercise in workout["exercises"]:
@@ -178,9 +178,5 @@ def process_workout(workout, prs, valid_exercises, path_data, data):
         if beats_current_pr(prs, exercise_name, weight, reps):
             success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises)
             logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
-
-    if logged_prs:
-        data["prs"] = prs
-        save_data(path_data, data)
 
     return logged_prs

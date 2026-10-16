@@ -112,6 +112,12 @@ def get_exercises_by_muscle_group(group):
             result.append(ex[0])
     return result
 
+def delete_prs_by_exercise(user_id, exercise_id):
+    conn = get_connection()
+    conn.execute(""" DELETE FROM prs WHERE user_id = ? AND exercise_id = ? """,(user_id, exercise_id))
+    conn.commit()
+    conn.close()
+    
 def drop_table(table_name):
     conn = get_connection()
     if table_name not in VALID_TABLES:
@@ -177,4 +183,3 @@ EXERCISES = [
 
 if __name__ == "__main__":
     init_db()
-    print(len(get_exercises()))
