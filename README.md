@@ -53,8 +53,8 @@ The first line holds the date and an optional title. Then comes the exercise nam
 
 | File | Purpose |
 |---|---|
-| `main.py` | App entry point |
-| `interface.py` | UI screens and navigation |
+| `interface.py` | App entry point: UI screens and navigation |
+| `main.py` | Core app logic: processing workouts, logging PRs and objectives |
 | `workout_parser.py` | Parses pasted workouts into structured data |
 | `database.py` | SQLite database layer |
 | `exercises.py` | Exercise list and name translations |
@@ -62,7 +62,7 @@ The first line holds the date and an optional title. Then comes the exercise nam
 
 ## Running it
 
-`pip install -r requirements.txt` and then `python main.py`
+`pip install -r requirements.txt` and then `python interface.py`
 
 ## Known issues
 
