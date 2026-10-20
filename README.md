@@ -17,9 +17,9 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 ## Screenshots
 
 <p align="center">
-  <img src="images/prs.png" width="250" alt="Your PRs" />
-  <img src="images/paste.png" width="250" alt="Paste Workout" />
-  <img src="images/objectives.png" width="250" alt="Next Objectives" />
+  <img src="images/prs.png" height="480" alt="Your PRs" />
+  <img src="images/paste.png" height="480" alt="Paste Workout" />
+  <img src="images/objectives.png" height="480" alt="Next Objectives" />
 </p>
 
 ## Features
