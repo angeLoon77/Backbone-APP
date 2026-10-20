@@ -8,7 +8,7 @@
   A workout tracker for Android and desktop where you just paste your training log and the app does the rest.
 </p>
 
-> 🚧 **Status:** in development (v1.12a). Built solo with Python and Flet.
+> 🚧 **Status:** in development (v1.12.1a). Built solo with Python and Flet.
 
 ## Why I built it
 
