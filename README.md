@@ -8,7 +8,7 @@
   A workout tracker for Android and desktop where you just paste your training log and the app does the rest.
 </p>
 
-> 🚧 **Status:** in development (v1.12.1a). Built solo with Python and Flet.
+> 🚧 **Status:** in development (v1.13a). Built solo with Python and Flet.
 
 ## Why I built it
 
@@ -30,7 +30,7 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 - **Next Objectives:** the next target for each exercise, based on your current PR
 - **History:** every logged workout with date and title, expandable and editable
 - **Languages:** interface available in Portuguese and English 
-- **Local storage:** data saved in a **SQLite** database on the device
+- **Cloud storage:** data is saved online in a **PostgreSQL** database (Neon)
 
 ## Workout format
 
@@ -48,6 +48,7 @@ The first line holds the date and an optional title. Then comes the exercise nam
 - **Python**
 - **Flet** (UI, Android and desktop)
 - **SQLite3** (local database)
+- **PostgreSQL / Neon** (Online Database)
 
 ## Project structure
 
@@ -57,20 +58,17 @@ The first line holds the date and an optional title. Then comes the exercise nam
 | `main.py` | Core app logic: processing workouts, logging PRs and objectives |
 | `workout_parser.py` | Parses pasted workouts into structured data |
 | `database.py` | SQLite database layer |
+| `online_database.py` | SQLite database layer |
 | `exercises.py` | Exercise list and name translations |
 | `translations.py` | PT/EN texts |
 
-## Running it
+## Roadmap
 
-`pip install -r requirements.txt` and then `python interface.py`
+- [x] Online Database 
+- [ ] Exercise name translation stopped working after the move to a database and needs to be reworked
+- [ ] Connect different exercises name(translation) to 1 output
+- [ ] Add a variety of exercises 
 
-## Known issues
-
-- Workouts pasted without a title appear as "No title" in the history
-- Exercise name translation stopped working after the move to a database and needs to be reworked
-- The database is local only; an online version is planned
-- The exercise list is still limited
-- The UI is a work in progress
 
 ## License
 
