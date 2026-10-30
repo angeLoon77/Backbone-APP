@@ -29,8 +29,8 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 - **Log PR:** add a PR manually
 - **Next Objectives:** the next target for each exercise, based on your current PR
 - **History:** every logged workout with date and title, expandable and editable
-- **Languages:** interface available in Portuguese and English 
-- **Cloud storage:** data is saved online in a **PostgreSQL** database (Neon)
+- **Languages:** interface available in Portuguese and English
+- **Online database (in progress):** the PostgreSQL layer (Neon) with users, exercises and PRs is built and tested. The app itself still runs on local SQLite until the API layer is ready
 
 ## Workout format
 
@@ -47,8 +47,9 @@ The first line holds the date and an optional title. Then comes the exercise nam
 
 - **Python**
 - **Flet** (UI, Android and desktop)
-- **SQLite3** (local database)
-- **PostgreSQL / Neon** (Online Database)
+- **SQLite3** (local database, used by the app today)
+- **PostgreSQL / Neon** (online database)
+- **psycopg2**, **bcrypt** and **python-dotenv** (online database access, password hashing and configuration)
 
 ## Project structure
 
@@ -57,18 +58,19 @@ The first line holds the date and an optional title. Then comes the exercise nam
 | `interface.py` | App entry point: UI screens and navigation |
 | `main.py` | Core app logic: processing workouts, logging PRs and objectives |
 | `workout_parser.py` | Parses pasted workouts into structured data |
-| `database.py` | SQLite database layer |
-| `online_database.py` | SQLite database layer |
-| `exercises.py` | Exercise list and name translations |
+| `database.py` | Local SQLite database layer (used by the app, will be removed later) |
+| `online_database.py` | PostgreSQL (Neon) database layer: tables, users (bcrypt), exercises and PRs |
 | `translations.py` | PT/EN texts |
 
 ## Roadmap
 
-- [x] Online Database 
+- [x] PostgreSQL schema and data layer (users, exercises, PRs)
+- [ ] Move the workout log (JSON) to the online database
+- [ ] API between the app and the online database
+- [ ] Switch the app from local SQLite to the online database
 - [ ] Exercise name translation stopped working after the move to a database and needs to be reworked
-- [ ] Connect different exercises name(translation) to 1 output
-- [ ] Add a variety of exercises 
-
+- [ ] Connect different exercise names (translations) to a single output
+- [ ] Add a variety of exercises
 
 ## License
 
