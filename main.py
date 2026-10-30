@@ -9,7 +9,6 @@ from platformdirs import user_data_dir
 
 folder = user_data_dir(appname="BackBone", appauthor="angeLoon DEV")
 os.makedirs(folder, exist_ok=True)
-path_data = os.path.join(folder, "data.json")
 path_workouts = os.path.join(folder, "workouts.json")
 
 def load_data(path):
@@ -134,7 +133,7 @@ def next_goal_calculation(prs):
 
         if current_reps >=10:
             goal_weight = current_weight + 5
-            goal_reps = 8
+            goal_reps = 6
         else:
             goal_weight = current_weight
             goal_reps = current_reps + 1

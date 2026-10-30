@@ -2,7 +2,7 @@
 
 TRANSLATIONS = {
     "pt": {
-        "app_title": "App de Musculação",
+        "app_title": "BackBone",
         "tab_your_prs": "Seus PRs",
         "tab_log_prs": "Registrar PR",
         "tab_next_objectives": "Próximos Objetivos",
@@ -35,7 +35,7 @@ TRANSLATIONS = {
         "prs_failed": ", {count} falharam!",
     },
     "en": {
-        "app_title": "Gym App",
+        "app_title": "Backbone",
         "tab_your_prs": "Your PRs",
         "tab_log_prs": "Log PR",
         "tab_next_objectives": "Next Objectives",

@@ -1,3 +1,4 @@
+.env
 .venv/
 .flet/
 __pycache__/

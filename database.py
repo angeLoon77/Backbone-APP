@@ -134,12 +134,12 @@ EXERCISES = [
     ("Incline Press", "chest"),
     ("Smith Incline Press", "chest"),
     ("Dumbbell Incline Press", "chest"),
+    ("Decline Chest Press", "chest"),    
     ("Pec Deck", "chest"),
     ("High To Low", "chest"),
     ("Low To High", "chest"),
     # legs
     ("Leg Press", "legs"),
-    ("Deadlift", "back"),
     ("Squat", "legs"),
     ("Seated Leg Curl", "legs"),
     ("Leg Extension", "legs"),
@@ -154,19 +154,24 @@ EXERCISES = [
     ("Standing Calf Raise", "calves"),
     # shoulders
     ("Shoulder Press", "shoulders"),
+    ("Military Press", "shoulders"),
     ("Lateral Raise", "shoulders"),
     ("Front Raise", "shoulders"),
     # back
+    ("Deadlift", "back"),
     ("Lat Pulldown Wide", "back"),
+    ("Front Pulldown", "back"),
     ("Lat Pulldown Close", "back"),
     ("T-Bar Row", "back"),
     ("Seated Row", "back"),
     ("Bent Over Row", "back"),
     ("One Arm Row", "back"),
     ("Pullover", "back"),
-    # biceps
+    # biceps 
     ("Barbell Curl", "biceps"),
+    ("Incline Dumbbell Curl", "biceps"),
     ("Dumbbell Curl", "biceps"),
+    ("Alternate Hammer Curl", "biceps"),
     ("Hammer Curl", "biceps"),
     # triceps
     ("Triceps Pushdown", "triceps"),
@@ -179,6 +184,8 @@ EXERCISES = [
     # forearms / core
     ("Wrist Curl", "forearms"),
     ("Cable Crunch", "core"),
+    # traps
+    ("Shrug", "traps")
 ]
 
 if __name__ == "__main__":

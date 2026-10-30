@@ -7,14 +7,14 @@ import translations as tr
 def main(page: ft.Page):
     db.init_db()
     valid_exercises = [name for name, group in db.get_exercises()]
-    prs = db.get_prs(1)  
-
+    prs = db.get_prs(1)
+      
     page.title = tr.t("app_title")
     page.theme_mode = ft.ThemeMode.DARK
     page.theme = ft.Theme(color_scheme_seed="#03a800")
     page.window.width = 420
     page.window.height = 750
-    page.window.icon = "assets/icon.ico"
+    page.window.icon = "C:\\projetos-github\\gym-project\\assets\\icon.ico"
     page.padding = 0
     page.bgcolor = ft.Colors.BLACK
     page.window.resizable = True
@@ -341,5 +341,4 @@ def main(page: ft.Page):
     )
 
     page.add(ft.SafeArea(content=tabs, expand=True))
-
 ft.run(main) 
