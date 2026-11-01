@@ -5,6 +5,7 @@ __pycache__/
 build/
 screenshots/
 assets/
+test-api-client.py
 data.json
 workouts.json
 pyproject.toml
