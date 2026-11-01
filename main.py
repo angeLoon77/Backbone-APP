@@ -1,188 +1,344 @@
-import os
-import json
-
+import flet as ft
+import core as core
+import workout_parser as wp
 import database as db
-import datetime
-from exercises import *
-from difflib import get_close_matches
-from platformdirs import user_data_dir
+import translations as tr
 
-folder = user_data_dir(appname="BackBone", appauthor="angeLoon DEV")
-os.makedirs(folder, exist_ok=True)
-path_workouts = os.path.join(folder, "workouts.json")
+def main(page: ft.Page):
+    db.init_db()
+    valid_exercises = [name for name, group in db.get_exercises()]
+    prs = db.get_prs(1)
+      
+    page.title = tr.t("app_title")
+    page.theme_mode = ft.ThemeMode.DARK
+    page.theme = ft.Theme(color_scheme_seed="#03a800")
+    page.window.width = 420
+    page.window.height = 750
+    page.window.icon = "C:\\projetos-github\\gym-project\\assets\\icon.ico"
+    page.padding = 0
+    page.bgcolor = ft.Colors.BLACK
+    page.window.resizable = True
 
-def load_data(path):
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            return json.load(f)
-    return {}
+    pr_logs = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
-def save_data(path, data):
-    with open (path, "w") as f:
-        json.dump(data, f, indent=4)
-
-# Function to log a personal record (PR) for a specific exercise, validating the input and updating the PRs dictionary
-
-def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
-    valid_exercises_lower = [ex.lower() for ex in valid_exercises]
-    if exercise not in valid_exercises_lower:
-        return False, f"{exercise} does not exist"
-
-    try:
-        weight = float(weight_input)
-        reps = float(reps_input)
-    except ValueError:
-        return False, "Invalid Numeric Value"
-    if weight < 0 or reps < 0:
-        return False, "Value must be 1 or More"
-
-    if reps > 99:
-        return False, "Reps must be 2 digits or less"
-
-    exercise_id = db.get_exercise_id(exercise)
-    if exercise_id is None:
-        return False, f"{exercise} does not exist"
-
-    if date is None:
-        date = datetime.date.today().isoformat()
-
-    db.add_pr(1, exercise_id, weight, reps, date)
-
-    prs.clear()
-    prs.update(db.get_prs(1))
-
-    return True, f"Your PR on {exercise.title()} is {weight}kg {reps:g}x reps!" 
-
-# Function to delete a PR entry for a specific exercise from the data and save the updated data back to the file
-
-def delete_pr(exercise_name,prs):
-    exercise_id = db.get_exercise_id(exercise_name)
-    if exercise_id is not None:
-        db.delete_prs_by_exercise(1, exercise_id)
-    prs.clear()
-    prs.update(db.get_prs(1))
-    return prs
-
-# Function to log a workout entry, ensuring no duplicates based on raw text
-
-def log_workout(path, workout, raw_text):
-    workouts_data = load_data(path)
-    logs = workouts_data.get("logs", [])
-
-    if any(log["raw_text"] == raw_text for log in logs):
-        return logs
-
-    logs.append({
-        "date": workout["date"],
-        "title": workout["title"],
-        "raw_text": raw_text,
-        "cardio": workout.get("cardio"),
-    })
-    workouts_data["logs"] = logs
-    save_data(path, workouts_data)
-    return logs
-
-# talvez deletar o get_workout_logs e usar so o get_workout_logs_with_index, mas por enquanto vou deixar os dois
-
-def get_workout_logs(path):
-    workouts_data = load_data(path)
-    logs = workouts_data.get("logs", [])
-    return list(reversed(logs))
-
-# Function to get workout logs with their index in the list, useful for editing or deleting specific entries
-
-def get_workout_logs_with_index(path):
-    workouts_data = load_data(path)
-    logs = workouts_data.get("logs", [])
-    indexed = list(enumerate(logs))
-    return list(reversed(indexed))
-
-# Function to delete a workout log entry by index
-
-def delete_workout_log(path, index):
-    workouts_data = load_data(path)
-    logs = workouts_data.get("logs", [])
-    if 0 <= index < len(logs):
-        logs.pop(index)
-    workouts_data["logs"] = logs
-    save_data(path, workouts_data)
-    return logs
-
-# Function to edit a workout log entry, updating its raw text and associated workout data
-
-def edit_workout_log(path, index, new_raw_text, workout):
-    workouts_data = load_data(path)
-    logs = workouts_data.get("logs", [])
-    if 0 <= index < len(logs):
-        logs[index]["raw_text"] = new_raw_text
-        logs[index]["date"] = workout["date"]
-        logs[index]["title"] = workout["title"]
-        logs[index]["cardio"] = workout.get("cardio")
-    workouts_data["logs"] = logs
-    save_data(path, workouts_data)
-    return logs
-
-# Function to calculate the next goal based on current PRs (I NEED TO IMPROVE THIS FUNCTION, IT'S NOT PERFECT, BUT IT'S A START)
-
-def next_goal_calculation(prs):
-    next_goal = {}
-
-    for exercise, data in prs.items():
-        current_weight = data["weight"]
-        current_reps = data["reps"]
-
-        if current_reps >=10:
-            goal_weight = current_weight + 5
-            goal_reps = 6
+    def update_pr_logs():
+        pr_logs.controls.clear()
+        if not prs:
+            pr_logs.controls.append(ft.Text(tr.t("no_pr_logged"), italic=True, color=ft.Colors.GREY))
         else:
-            goal_weight = current_weight
-            goal_reps = current_reps + 1
+            for exercise, info in prs.items():
 
-        next_goal[exercise] =  {"weight": goal_weight, "reps": goal_reps}
+                def make_delete_pr_handler(ex_name):
+                    def handler(e):
+                        core.delete_pr(ex_name, prs)
+                        update_pr_logs()
+                        update_objectives()
+                        page.update()
+                    return handler
 
-    return next_goal
+                pr_logs.controls.append(
+                    ft.Card(
+                        content=ft.Container(
+                            padding=15,
+                            content=ft.Row(
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                controls=[
+                                    ft.Column([
+                                        ft.Text(exercise.title(), weight=ft.FontWeight.BOLD, size=16),
+                                        ft.Text(f"{info['reps']} reps", color=ft.Colors.GREY),
+                                    ]),
+                                    ft.Row([
+                                        ft.Text(f"{info['weight']}kg", size=20, weight=ft.FontWeight.BOLD,
+                                                color="#03a800"),
+                                        ft.IconButton(
+                                            icon=ft.Icons.DELETE,
+                                            icon_color=ft.Colors.RED_400,
+                                            on_click=make_delete_pr_handler(exercise),
+                                        ),
+                                    ]),
+                                ],
+                            ),
+                        ),
+                    )
+                )
 
-# Function to determine if a new set beats the current personal record (PR) for a given exercise
 
-def beats_current_pr(prs, exercise_name, weight, reps):
-    current = prs.get(exercise_name)
-    if not current:
-        return True
-    if weight != current["weight"]:
-        return weight > current["weight"]
-    return reps > current["reps"]
+    exercise_field = ft.AutoComplete(value="", 
+                                     suggestions=[ft.AutoCompleteSuggestion(key=ex, value= ex) for ex in valid_exercises],
+                                     on_select=lambda e: None, width=300)
+    weight_field = ft.TextField(label=tr.t("weight_label"), 
+                                hint_text="Ex: 60",
+                                width=300, 
+                                border_radius=10, prefix_icon=ft.Icons.FITNESS_CENTER)
+    reps_field = ft.TextField(label=tr.t("reps_label"), 
+                              hint_text="Ex: 10",
+                              width=300, 
+                              border_radius=10, 
+                              prefix_icon=ft.Icons.REPEAT)
 
-def to_iso_date(date_text):
-    try:
-        return datetime.datetime.strptime(date_text, "%d/%m/%Y").date().isoformat()
-    except (ValueError, TypeError):
-        return None
+    def save_pr(e):
+        success, msg = core.log_PR(
+            exercise_field.value.strip().lower(),
+            weight_field.value,
+            reps_field.value,
+            prs,
+            valid_exercises,
+        )
 
-# Registers a PR when the best valid set of an exercise beats the stored one
-def process_workout(workout, prs, valid_exercises):
-    logged_prs = []
-    date = to_iso_date(workout.get("date"))
+        page.show_dialog(
+        ft.SnackBar(
+        content=ft.Text(msg),
+        bgcolor="#03a800" if success else "#ff0000",
+    )
+)
 
-    for exercise in workout["exercises"]:
-        exercise_name = exercise["name"].lower()
-        sets = exercise["sets"]
-        if not sets:
-            continue
+        if success:
+            update_pr_logs()
+            update_objectives()
+            exercise_field.value = ""
+            weight_field.value = ""
+            reps_field.value = ""
 
-        eligible = [
-            s for s in sets
-            if s.get("reps") is not None
-            and not any(tag["code"] == "W" for tag in s["tags"])
-        ]
-        if not eligible:
-            continue
+        page.update()
 
-        best_set = max(eligible, key=lambda s: (s.get("total_weight") or s.get("weight", 0), s["reps"]))
-        weight = best_set.get("total_weight") or best_set.get("weight")
-        reps = best_set["reps"]
+    goals_list = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
-        if beats_current_pr(prs, exercise_name, weight, reps):
-            success, msg = log_PR(exercise_name, str(weight), str(reps), prs, valid_exercises, date)
-            logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
+    def update_objectives():
+        goals_list.controls.clear()
+        if not prs:
+            goals_list.controls.append(ft.Text(tr.t("no_objective"), italic=True, color=ft.Colors.GREY))
+        else:
+            goals = core.next_goal_calculation(prs)
+            for exercise, next_goal in goals.items():
+                goals_list.controls.append(
+                    ft.Card(
+                        content=ft.Container(
+                            padding=15,
+                            content=ft.Row(
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                controls=[
+                                    ft.Text(exercise.title(), weight=ft.FontWeight.BOLD, size=16),
+                                    ft.Text(
+                                        f"{next_goal['weight']}kg x {next_goal['reps']}",
+                                        color="#03a800", weight=ft.FontWeight.BOLD,
+                                    ),
+                                ],
+                            ),
+                        ),
+                    )
+                )
+    workout_field = ft.TextField(
+    label=tr.t("workout_field_label"),
+    hint_text=tr.t("workout_hint_example"),
+    multiline=True,
+    min_lines=10,
+    max_lines=20,
+    width=380,
+    border_radius=10,
+    )
 
-    return logged_prs
+    MAX_WORKOUT_LENGTH = 10000  # Define a maximum length for the workout text
+    
+    def process_pasted_workout(e):
+        text = workout_field.value
+
+        if not text or not text.strip():
+            page.show_dialog(
+                ft.SnackBar(content=ft.Text(tr.t("empty_workout_error")), bgcolor="#ff0000")
+            )
+            page.update()
+            return 
+
+        if len(text) > MAX_WORKOUT_LENGTH:
+            page.show_dialog(
+                ft.SnackBar(content=ft.Text(f"{tr.t('workout_too_long', max_length=MAX_WORKOUT_LENGTH)}"), bgcolor="#ff0000")
+            )
+            page.update()
+            return
+        try:
+            workout = wp.parse_any_workout(text)
+        except ValueError as err:
+            page.show_dialog(
+                ft.SnackBar(content=ft.Text(str(err)), bgcolor="#ff0000")
+            )
+            page.update()
+            return
+
+        core.log_workout(core.path_workouts, workout, text)
+        logged_prs = core.process_workout(workout, prs, valid_exercises)
+
+        found_prs = [r for r in logged_prs if r["success"]]
+        failed_prs = [r for r in logged_prs if not r["success"]]
+
+        resumo = f"{len(found_prs)} {tr.t('prs_logged', count=len(found_prs))}"
+        if failed_prs:
+            resumo += f", {len(failed_prs)} {tr.t('prs_failed', count=len(failed_prs))}"
+
+        page.show_dialog(
+            ft.SnackBar(
+                content=ft.Text(resumo),
+                bgcolor="#03a800" if not failed_prs else "#ff0000",
+            )
+        )
+
+        update_pr_logs()
+        update_objectives()
+        update_workout_history()
+
+        workout_field.value = ""
+
+        page.update()
+
+    workout_history = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
+
+    def update_workout_history():
+        workout_history.controls.clear()
+        indexed_logs = core.get_workout_logs_with_index(core.path_workouts)
+
+        if not indexed_logs:
+            workout_history.controls.append(
+                ft.Text(tr.t("no_workout_logged"), italic=True, color=ft.Colors.GREY)
+            )
+            return
+
+        for index, log in indexed_logs:
+            title = log["title"] or tr.t("no_title")
+
+            def make_delete_handler(idx):
+                def handler(e):
+                    core.delete_workout_log(core.path_workouts, idx)
+                    update_workout_history()
+                    page.update()
+
+                return handler
+            
+            def make_edit_handler(idx, current_text):
+                def handler(e):
+                    edit_field = ft.TextField(
+                        value=current_text, multiline=True, min_lines=10, max_lines=20,
+                )
+                    def save_edit(e):
+                        new_text = edit_field.value
+
+                        try:
+                            corrected_workout = wp.parse_any_workout(new_text)
+                        except ValueError as err:
+                            page.show_dialog(ft.SnackBar(content=ft.Text(str(err)), bgcolor=ft.Colors.RED_700))
+
+                            page.update()
+
+                            return
+
+                        core.edit_workout_log(core.path_workouts, idx, new_text, corrected_workout)
+                        core.process_workout(corrected_workout, prs, valid_exercises)
+
+                        page.pop_dialog()
+
+                        update_pr_logs()
+                        update_objectives()
+                        update_workout_history()
+
+                        page.update()
+
+                    dialog = ft.AlertDialog(
+                        title=ft.Text(tr.t("edit_workout_title")),
+                        content=edit_field,
+                        actions=[
+                            ft.TextButton(tr.t("cancel_button"), on_click=lambda e: page.pop_dialog()),
+                            ft.TextButton(tr.t("save_button"), on_click=save_edit),
+                        ],
+                    )
+                    page.show_dialog(dialog)
+
+                return handler
+            
+            workout_history.controls.append(
+            ft.ExpansionTile(
+                title=ft.Text(f"{log['date']} - {title}", weight=ft.FontWeight.BOLD),
+                controls=[
+                    ft.Container(
+                        padding=15,
+                        content=ft.Column([
+                            ft.Text(log["raw_text"], selectable=True, color=ft.Colors.GREY_300),
+                            ft.Row([
+                                ft.IconButton(
+                                    icon=ft.Icons.EDIT,
+                                    on_click=make_edit_handler(index, log["raw_text"]),
+                                ),
+                                ft.IconButton(
+                                    icon=ft.Icons.DELETE,
+                                    icon_color=ft.Colors.RED_400,
+                                    on_click=make_delete_handler(index),
+                                ),
+                            ]),
+                        ]),
+                    )
+                ],
+            )
+        )
+            page.update()
+                
+
+    update_pr_logs()
+    update_objectives()
+    update_workout_history()
+
+    tabs_bar = ft.TabBar(
+        tabs=[
+            ft.Tab(label=tr.t("tab_your_prs"), icon=ft.Icons.LIST_ALT),
+            ft.Tab(label=tr.t("tab_log_prs"), icon=ft.Icons.ADD_CIRCLE_OUTLINE),
+            ft.Tab(label=tr.t("tab_next_objectives"), icon=ft.Icons.FLAG_OUTLINED),
+            ft.Tab(label=tr.t("tab_paste_workout"), icon=ft.Icons.NOTE_ADD),
+            ft.Tab(label=tr.t("tab_workout_logs"), icon=ft.Icons.FITNESS_CENTER),
+        ],
+    )
+
+    tabs_view = ft.TabBarView(
+        expand=True,
+        controls=[
+            ft.Container(content=pr_logs, padding=20),
+            ft.Container(
+                content=ft.Column([
+                    exercise_field,
+                    weight_field,
+                    reps_field,
+                    ft.Button(
+                         tr.t("save_button"),
+                         icon=ft.Icons.SAVE,
+                         width= 300, 
+                         height=45,
+                         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                         on_click=save_pr),
+                ]),
+                padding=20,
+            ),
+            ft.Container(content=goals_list, padding=20),ft.Container(
+        content=ft.Column(
+        spacing=15,
+        controls=[
+            workout_field,
+            ft.Button(
+                tr.t("process_workout_button"),
+                icon=ft.Icons.PLAY_ARROW,
+                width=380,
+                height=45,
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                on_click=process_pasted_workout,
+            ),
+        ],
+    ),
+    padding=20,
+),ft.Container(content=workout_history, padding=20),
+        ],
+    )
+
+    tabs = ft.Tabs(
+        selected_index=0,
+        length=5,
+        expand=True,
+        content=ft.Column(expand=True, controls=[tabs_bar, tabs_view]),
+    )
+
+    page.add(ft.SafeArea(content=tabs, expand=True))
+ft.run(main) 

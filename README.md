@@ -55,8 +55,8 @@ The first line holds the date and an optional title. Then comes the exercise nam
 
 | File | Purpose |
 |---|---|
-| `interface.py` | App entry point: UI screens and navigation |
-| `main.py` | Core app logic: processing workouts, logging PRs and objectives |
+| `main.py` | App entry point: UI screens and navigation |
+| `core.py` | Core app logic: processing workouts, logging PRs and objectives |
 | `workout_parser.py` | Parses pasted workouts into structured data |
 | `database.py` | Local SQLite database layer (used by the app, will be removed later) |
 | `online_database.py` | PostgreSQL (Neon) database layer: tables, users (bcrypt), exercises and PRs |
