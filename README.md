@@ -77,7 +77,7 @@ The backend lives in its own repository, **`backbone-api`**, which also has the 
 - [x] PostgreSQL schema and data layer (users, exercises, PRs)
 - [x] Flask API with token authentication (register, login, PRs, exercises)
 - [x] HTTP client for the app (`api_client.py`), tested against the API
-- [ ] API routes for PRs by muscle group and for deleting all PRs of an exercise
+- [x] API routes for PRs by muscle group and for deleting all PRs of an exercise
 - [ ] Login screen in the app
 - [ ] Switch the app from local SQLite to the API
 - [ ] Host the API
