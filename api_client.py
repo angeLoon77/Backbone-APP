@@ -1,11 +1,13 @@
 import re
 import requests
+from urllib.parse import quote
 
 API_URL = "http://127.0.0.1:5000"  
 TIMEOUT = 15
 
 _token = None
-_exercise_ids = {}  # cache: nome em minúsculas -> id
+_exercise_ids = {}
+_exercise_cache = None
 
 
 class ApiError(Exception):
@@ -15,6 +17,11 @@ class ApiError(Exception):
 class SessionExpired(ApiError):
     """Missing or expired token. The user should log in again."""
 
+def get_exercises():
+    global _exercise_cache
+    if _exercise_cache is None:
+        _exercise_cache = _fetch_exercises()
+    return _exercise_cache
 
 # BASE/TOKENS
 
@@ -92,7 +99,7 @@ def login(username, password):
 def init_db():
     pass 
 
-def get_exercises():
+def _fetch_exercises():
     r = _request("GET", "/exercises")
     _check(r, (200,))
     data = r.json()
@@ -109,6 +116,16 @@ def get_exercise_id(name):
 
 def get_exercises_by_muscle_group(group):
     return [name for name, muscle_group in get_exercises() if muscle_group == group]
+
+def get_prs_by_muscle_group(user_id, muscle_group):
+    r = _request("GET", f"/prs/group/{quote(muscle_group)}")
+    _check(r, (200,))
+    return [(p["name"].lower(), p["weight"], p["reps"], p["date"]) for p in r.json()]
+
+def delete_prs_by_exercise(user_id, exercise_id):
+    r = _request("DELETE", f"/exercises/{int(exercise_id)}/prs")
+    _check(r, (200,))
+    return r.json()["deleted"]
 
 
 def add_pr(user_id, exercise_id, weight, reps, date):
