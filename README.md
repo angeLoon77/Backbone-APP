@@ -39,7 +39,7 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 bench press
 10x 40kg
 8x 60kg - F, PR (notes)
-10x 100kg - W1
+10x 100kg - W
 ```
 
 The first line holds the date as day/month and an optional title. Then comes the exercise name, followed by one line per set (`reps x weight`). Tags after the set are optional: `F` for failure, `PR` for personal record, and `W` for a warmup set, which is ignored when detecting a PR. Notes in parentheses are optional.
