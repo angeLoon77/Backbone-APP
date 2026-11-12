@@ -1,5 +1,9 @@
+import json
+import os
 import re
+
 import requests
+from platformdirs import user_data_dir
 from urllib.parse import quote
 
 API_URL = "https://backbone-api-txsn.onrender.com"  
@@ -32,8 +36,62 @@ def set_token(token):
     _exercise_ids.clear()
 
 
+def get_token():
+    return _token
+
+
 def has_token():
     return _token is not None
+
+
+def _session_dirs():
+    folders = []
+    app_data = os.environ.get("FLET_APP_STORAGE_DATA")
+    if app_data:
+        folders.append(app_data)
+    folders.append(user_data_dir(appname="BackBone", appauthor="angeLoon DEV"))
+    unique = []
+    for folder in folders:
+        if folder and folder not in unique:
+            unique.append(folder)
+    return unique
+
+
+def load_saved_token():
+    for folder in _session_dirs():
+        path = os.path.join(folder, "session.json")
+        try:
+            with open(path, encoding="utf-8") as f:
+                token = json.load(f).get("token")
+        except (OSError, ValueError):
+            continue
+        if isinstance(token, str) and token:
+            return token
+    return None
+
+
+def remember_session():
+    if not _token:
+        return
+    payload = json.dumps({"token": _token})
+    for folder in _session_dirs():
+        try:
+            os.makedirs(folder, exist_ok=True)
+            with open(os.path.join(folder, "session.json"), "w", encoding="utf-8") as f:
+                f.write(payload)
+        except OSError:
+            continue
+
+
+def forget_session():
+    set_token(None)
+    for folder in _session_dirs():
+        path = os.path.join(folder, "session.json")
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError:
+            continue
 
 
 def _request(method, path, **kwargs):
