@@ -8,7 +8,7 @@
   A workout tracker for Android and desktop where you just paste your training log and the app does the rest.
 </p>
 
-> 🚧 **Status:** in development (v1.17a). Built solo with Python and Flet.
+> 🚧 **Status:** in development (v1.20a). Built solo with Python and Flet.
 
 ## Why I built it
 
@@ -39,7 +39,7 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 bench press
 10x 40kg
 8x 60kg - F, PR (notes)
-10x 100kg - W
+10x 100kg - W1
 ```
 
 The first line holds the date as day/month and an optional title. Then comes the exercise name, followed by one line per set (`reps x weight`). Tags after the set are optional: `F` for failure, `PR` for personal record, and `W` for a warmup set, which is ignored when detecting a PR. Notes in parentheses are optional.
