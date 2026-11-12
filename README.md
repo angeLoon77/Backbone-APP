@@ -8,7 +8,7 @@
   A workout tracker for Android and desktop where you just paste your training log and the app does the rest.
 </p>
 
-> 🚧 **Status:** in development (v1.18a). Built solo with Python and Flet.
+> 🚧 **Status:** in development (v1.17a). Built solo with Python and Flet.
 
 ## Why I built it
 
@@ -19,7 +19,7 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 <p align="center">
   <img src="images/prs.png" height="400" alt="Your PRs" />
   <img src="images/paste.png" height="400" alt="Paste Workout" />
-  <img src="images/objectives.png" height="400" alt="Next Objectives" />
+  <img src="images/goals.png" height="400" alt="Next Objectives" />
 </p>
 
 ## Features
@@ -72,7 +72,6 @@ The backend lives in its own repository, **`backbone-api`**, which also has the 
 | `core.py` | Processing workouts, logging PRs and objectives |
 | `workout_parser.py` | Parses pasted workouts into structured data |
 | `api_client.py` | HTTP client for the hosted API. This is what the app uses for accounts, exercises and PRs |
-| `database.py` | Earlier local SQLite layer. The running app no longer uses it |
 | `translations.py` | PT/EN texts |
 
 ## Roadmap
