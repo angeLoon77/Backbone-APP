@@ -32,11 +32,15 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
         reps = float(reps_input)
     except ValueError:
         return False, "Invalid Numeric Value"
-    if weight < 0 or reps < 0:
+    if weight < 0 or reps <= 0:
         return False, "Value must be 1 or More"
+
+    if reps != int(reps):
+        return False, "Invalid Numeric Value"
 
     if reps > 99:
         return False, "Reps must be 2 digits or less"
+    reps = int(reps)
 
     exercise_id = db.get_exercise_id(exercise)
     if exercise_id is None:
@@ -45,10 +49,18 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
     if date is None:
         date = datetime.date.today().isoformat()
 
-    db.add_pr(1, exercise_id, weight, reps, date)
+    try:
+        db.add_pr(1, exercise_id, weight, reps, date)
+        loaded = db.get_prs(1)
+    except db.SessionExpired:
+        raise
+    except (ValueError, db.ApiError) as error:
+        return False, str(error)
+    if not isinstance(loaded, dict):
+        return False, "Unexpected PR data from the server"
 
     prs.clear()
-    prs.update(db.get_prs(1))
+    prs.update(loaded)
 
     return True, f"Your PR on {exercise.title()} is {weight}kg {reps:g}x reps!" 
 

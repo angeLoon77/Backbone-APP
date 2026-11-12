@@ -9,7 +9,7 @@ FIELD_BG = "#161616"
 BORDER = "#2c2c2c"
 
 
-def main(page: ft.Page):
+def build(page: ft.Page, on_success, initial_message=None):
     page.title = "Backbone"
     page.theme_mode = ft.ThemeMode.DARK
     page.theme = ft.Theme(color_scheme_seed=ACCENT)
@@ -197,7 +197,7 @@ def main(page: ft.Page):
             if not api_client.login(name, secret):
                 finish("That username and password don't match.")
                 return
-            finish("You're signed in.", ok=True)
+            on_success()
         except ValueError as error:
             finish(str(error))
         except api_client.ApiError as error:
@@ -220,6 +220,9 @@ def main(page: ft.Page):
         if status.visible and not signed_in["value"]:
             hide_status()
             page.update()
+
+    if initial_message:
+        show_status(initial_message)
 
     username.on_change = on_edit
     password.on_change = on_edit
@@ -273,5 +276,11 @@ def main(page: ft.Page):
     )
 
 
+def _run(page: ft.Page):
+    import main as app
+
+    app.main(page)
+
+
 if __name__ == "__main__":
-    ft.run(main)
+    ft.run(_run)

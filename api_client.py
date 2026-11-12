@@ -2,7 +2,7 @@ import re
 import requests
 from urllib.parse import quote
 
-API_URL = "https://backbone-api-txsn.onrender.com/"  
+API_URL = "https://backbone-api-txsn.onrender.com"  
 TIMEOUT = 45
 
 _token = None
@@ -26,8 +26,10 @@ def get_exercises():
 # BASE/TOKENS
 
 def set_token(token):
-    global _token
+    global _token, _exercise_cache
     _token = token
+    _exercise_cache = None
+    _exercise_ids.clear()
 
 
 def has_token():
@@ -133,7 +135,7 @@ def add_pr(user_id, exercise_id, weight, reps, date):
         "POST",
         "/prs",
         json={
-            "exercise_id": exercise_id,
+            "exercise_id": int(exercise_id),
             "weight": float(weight),
             "reps": int(reps),
             "date": _to_iso(date),

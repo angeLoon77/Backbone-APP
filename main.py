@@ -1,20 +1,26 @@
+from pathlib import Path
+
 import flet as ft
 import core as core
 import workout_parser as wp
 import api_client as db
+import login as login_screen
 import translations as tr
 
-def main(page: ft.Page):
-    db.init_db()
+ICON = str(Path(__file__).resolve().parent / "assets" / "icon.ico")
+
+def start_app(page: ft.Page, on_session_expired):
     valid_exercises = [name for name, group in db.get_exercises()]
     prs = db.get_prs(1)
-      
+    if not isinstance(prs, dict):
+        raise db.ApiError("Unexpected PR data from the server")
+
     page.title = tr.t("app_title")
     page.theme_mode = ft.ThemeMode.DARK
     page.theme = ft.Theme(color_scheme_seed="#03a800")
     page.window.width = 420
     page.window.height = 750
-    page.window.icon = "C:\\projetos-github\\gym-project\\assets\\icon.ico"
+    page.window.icon = ICON
     page.padding = 0
     page.bgcolor = ft.Colors.BLACK
     page.window.resizable = True
@@ -30,7 +36,15 @@ def main(page: ft.Page):
 
                 def make_delete_pr_handler(ex_name):
                     def handler(e):
-                        core.delete_pr(ex_name, prs)
+                        try:
+                            core.delete_pr(ex_name, prs)
+                        except db.SessionExpired:
+                            on_session_expired()
+                            return
+                        except db.ApiError as error:
+                            page.show_dialog(ft.SnackBar(content=ft.Text(str(error)), bgcolor="#ff0000"))
+                            page.update()
+                            return
                         update_pr_logs()
                         update_objectives()
                         page.update()
@@ -78,13 +92,19 @@ def main(page: ft.Page):
                               prefix_icon=ft.Icons.REPEAT)
 
     def save_pr(e):
-        success, msg = core.log_PR(
-            exercise_field.value.strip().lower(),
-            weight_field.value,
-            reps_field.value,
-            prs,
-            valid_exercises,
-        )
+        try:
+            success, msg = core.log_PR(
+                exercise_field.value.strip().lower(),
+                weight_field.value,
+                reps_field.value,
+                prs,
+                valid_exercises,
+            )
+        except db.SessionExpired:
+            on_session_expired()
+            return
+        except db.ApiError as error:
+            success, msg = False, str(error)
 
         page.show_dialog(
         ft.SnackBar(
@@ -166,7 +186,15 @@ def main(page: ft.Page):
             return
 
         core.log_workout(core.path_workouts, workout, text)
-        logged_prs = core.process_workout(workout, prs, valid_exercises)
+        try:
+            logged_prs = core.process_workout(workout, prs, valid_exercises)
+        except db.SessionExpired:
+            on_session_expired()
+            return
+        except db.ApiError as error:
+            page.show_dialog(ft.SnackBar(content=ft.Text(str(error)), bgcolor="#ff0000"))
+            page.update()
+            return
 
         found_prs = [r for r in logged_prs if r["success"]]
         failed_prs = [r for r in logged_prs if not r["success"]]
@@ -231,7 +259,16 @@ def main(page: ft.Page):
                             return
 
                         core.edit_workout_log(core.path_workouts, idx, new_text, corrected_workout)
-                        core.process_workout(corrected_workout, prs, valid_exercises)
+                        try:
+                            core.process_workout(corrected_workout, prs, valid_exercises)
+                        except db.SessionExpired:
+                            page.pop_dialog()
+                            on_session_expired()
+                            return
+                        except db.ApiError as error:
+                            page.show_dialog(ft.SnackBar(content=ft.Text(str(error)), bgcolor="#ff0000"))
+                            page.update()
+                            return
 
                         page.pop_dialog()
 
@@ -341,4 +378,38 @@ def main(page: ft.Page):
     )
 
     page.add(ft.SafeArea(content=tabs, expand=True))
-ft.run(main) 
+
+def main(page: ft.Page):
+    page.title = tr.t("app_title")
+    page.theme_mode = ft.ThemeMode.DARK
+    page.theme = ft.Theme(color_scheme_seed="#03a800")
+    page.bgcolor = ft.Colors.BLACK
+    page.padding = 0
+    page.window.width = 420
+    page.window.height = 750
+    page.window.min_width = 380
+    page.window.min_height = 640
+    page.window.icon = ICON
+    page.window.resizable = True
+
+    def show_login(message=None):
+        db.set_token(None)
+        page.clean()
+        login_screen.build(page, on_success=open_app, initial_message=message)
+
+    def open_app():
+        page.clean()
+        try:
+            start_app(
+                page,
+                on_session_expired=lambda: show_login("Session expired, please log in again"),
+            )
+        except db.SessionExpired:
+            show_login("Session expired, please log in again")
+        except db.ApiError as error:
+            show_login(str(error))
+
+    show_login()
+
+if __name__ == "__main__":
+    ft.run(main) 
