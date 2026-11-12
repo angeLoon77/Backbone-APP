@@ -1,7 +1,7 @@
 import os
 import json
 
-import database as db
+import api_client as db
 import datetime
 from difflib import get_close_matches
 from platformdirs import user_data_dir
@@ -17,7 +17,7 @@ def load_data(path):
     return {}
 
 def save_data(path, data):
-    with open (path, "w") as f:
+    with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
 # Function to log a personal record (PR) for a specific exercise, validating the input and updating the PRs dictionary
@@ -32,10 +32,10 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
         reps = float(reps_input)
     except ValueError:
         return False, "Invalid Numeric Value"
-    if weight <= 0 or reps <= 0:
+    if weight < 0 or reps < 0:
         return False, "Value must be 1 or More"
 
-    if reps >= 99:
+    if reps > 99:
         return False, "Reps must be 2 digits or less"
 
     exercise_id = db.get_exercise_id(exercise)

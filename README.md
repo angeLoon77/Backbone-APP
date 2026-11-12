@@ -78,9 +78,9 @@ The backend lives in its own repository, **`backbone-api`**, which also has the 
 - [x] Flask API with token authentication (register, login, PRs, exercises)
 - [x] HTTP client for the app (`api_client.py`), tested against the API
 - [x] API routes for PRs by muscle group and for deleting all PRs of an exercise
-- [ ] Login screen in the app
+- [x] Host the API
+- [x] Login screen in the app
 - [ ] Switch the app from local SQLite to the API
-- [ ] Host the API
 - [ ] Move the workout log (JSON) to the online database
 - [ ] Exercise name translation stopped working after the move to a database and needs to be reworked
 - [ ] Connect different exercise names (translations) to a single output

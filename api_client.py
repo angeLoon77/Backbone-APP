@@ -2,8 +2,8 @@ import re
 import requests
 from urllib.parse import quote
 
-API_URL = "http://127.0.0.1:5000"  
-TIMEOUT = 15
+API_URL = "https://backbone-api-txsn.onrender.com/"  
+TIMEOUT = 45
 
 _token = None
 _exercise_ids = {}

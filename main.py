@@ -1,7 +1,7 @@
 import flet as ft
 import core as core
 import workout_parser as wp
-import database as db
+import api_client as db
 import translations as tr
 
 def main(page: ft.Page):
