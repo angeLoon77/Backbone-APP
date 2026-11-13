@@ -7,7 +7,7 @@ import api_client as db
 import login as login_screen
 import translations as tr
 
-ICON = str(Path(__file__).resolve().parent / "assets" / "icon.ico")
+ICON = str(Path(__file__).resolve().parent / "assets" / "icon.png")
 
 ACCENT = "#03a800"
 SURFACE = "#121212"

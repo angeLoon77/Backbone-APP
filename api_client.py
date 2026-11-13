@@ -1,12 +1,14 @@
 import json
 import os
 import re
-
 import requests
 from platformdirs import user_data_dir
 from urllib.parse import quote
+from dotenv import load_dotenv
 
-API_URL = "https://backbone-api-txsn.onrender.com"  
+load_dotenv()
+
+API_URL = os.getenv("API_URL")
 TIMEOUT = 45
 
 _token = None
