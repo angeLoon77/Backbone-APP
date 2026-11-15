@@ -1,8 +1,12 @@
-![Backbone icon](assets/icon.png)
+<p align="center">
+  <img src="assets/icon.png" width="120" alt="Backbone icon" />
+</p>
 
-# Backbone
+<h1 align="center">Backbone</h1>
 
-A workout tracker for Android and desktop where you just paste your training log and the app does the rest.
+<p align="center">
+  A workout tracker for Android and desktop where you just paste your training log and the app does the rest.
+</p>
 
 > 🚧 **Status:** in development (v1.21a). Built solo with Python and Flet.
 
@@ -12,7 +16,11 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 
 ## Screenshots
 
-![Your PRs](images/prs.png) ![Paste Workout](images/paste.png) ![Next Objectives](images/goals.png)
+<p align="center">
+  <img src="images/prs.png" height="400" alt="Your PRs" />
+  <img src="images/paste.png" height="400" alt="Paste Workout" />
+  <img src="images/goals.png" height="400" alt="Next Objectives" />
+</p>
 
 ## Features
 
@@ -27,7 +35,7 @@ I already log my workouts as plain text in my notes, but it was tiring to figure
 
 ## Workout format
 
-```
+```text
 28/08 - your title
 bench press
 10x 40kg
@@ -90,14 +98,14 @@ Workouts the parser understands are never sent. Parser feedback is linked to you
 
 ## Project structure
 
-| File                | Purpose                                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `main.py`           | App entry: login first, then the tracker                                                                         |
-| `login.py`          | Sign-in and account creation                                                                                     |
-| `core.py`           | Processing workouts, logging PRs and objectives, and detecting workouts the parser couldn't fully understand      |
-| `workout_parser.py` | Parses pasted workouts into structured data                                                                      |
-| `api_client.py`     | HTTP client for the hosted API: accounts, exercises, PRs and the background parser feedback                      |
-| `translations.py`   | PT/EN texts                                                                                                      |
+| File | Purpose |
+|---|---|
+| `main.py` | App entry: login first, then the tracker |
+| `login.py` | Sign-in and account creation |
+| `core.py` | Processing workouts, logging PRs and objectives |
+| `workout_parser.py` | Parses pasted workouts into structured data |
+| `api_client.py` | HTTP client for the hosted API. This is what the app uses for accounts, exercises and PRs |
+| `translations.py` | PT/EN texts |
 
 ## Roadmap
 
