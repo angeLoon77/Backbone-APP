@@ -197,3 +197,23 @@ def process_workout(workout, prs, valid_exercises):
             logged_prs.append({"exercise": exercise_name, "success": success, "message": msg})
 
     return logged_prs
+
+# Sends back Logs to the server, and if there are any issues with the workout, it logs them in the database for further analysis
+
+def find_parser_issues(workout, valid_exercises):
+    issues = []
+    valid_lower = {ex.lower() for ex in valid_exercises}
+
+    if to_iso_date(workout.get("date")) is None:
+        issues.append("invalid_date")
+    if not workout["exercises"] and not workout.get("cardio"):
+        issues.append("no_exercises")
+
+    for exercise in workout["exercises"]:
+        name = exercise["name"].lower()
+        if name not in valid_lower:
+            issues.append(f"unknown_exercise: {name}")
+        elif not exercise["sets"]:
+            issues.append(f"no_sets: {name}")
+
+    return issues

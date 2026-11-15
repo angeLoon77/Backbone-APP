@@ -499,8 +499,15 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
         try:
             workout = wp.parse_any_workout(text)
         except ValueError as err:
+            db.send_parser_failure(text, f"parse_error: {err}"[:200])
             notify(str(err), ok=False)
             return
+
+        issues = core.find_parser_issues(workout, valid_exercises)
+        if issues:
+            db.send_parser_failure(text, "; ".join(issues)[:200])
+
+        core.log_workout(core.path_workouts, workout, text)
 
         core.log_workout(core.path_workouts, workout, text)
         try:

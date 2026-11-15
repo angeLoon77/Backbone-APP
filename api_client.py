@@ -2,13 +2,11 @@ import json
 import os
 import re
 import requests
+import threading
 from platformdirs import user_data_dir
 from urllib.parse import quote
-from dotenv import load_dotenv
 
-load_dotenv()
-
-API_URL = os.getenv("API_URL")
+API_URL = "https://backbone-api-txsn.onrender.com"
 TIMEOUT = 45
 
 _token = None
@@ -157,6 +155,7 @@ def login(username, password):
         return False
     raise ApiError(_error_message(r))
 
+# EXERCISES AND PRS
 
 def init_db():
     pass 
@@ -209,3 +208,21 @@ def get_prs(user_id):
     r = _request("GET", "/prs")
     _check(r, (200,))
     return r.json()
+
+# PARSER FAILURES
+
+def send_parser_failure(raw_text, reason):
+    """Fire-and-forget: sends text the parser couldn't handle. Never raises."""
+    if not _token:
+        return
+
+    def _send():
+        try:
+            _request("POST", "/parser-failures", json={
+                "raw_text": raw_text[:10_000],
+                "reason": reason[:200],
+            })
+        except Exception:
+            pass
+
+    threading.Thread(target=_send, daemon=True).start()
