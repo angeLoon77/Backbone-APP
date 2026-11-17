@@ -1,5 +1,6 @@
 import re
 from datetime import date
+import i18n as tr
 
 def parse_header(text):
     text = text.strip()
@@ -28,7 +29,7 @@ def parse_exercise_line(text):
         suffix = suffix.strip()
         if re.match(r"^[A-Z]$", suffix):
             equipment = suffix
-    return {"name": name.strip(), "equipment": equipment}
+    return {"name": tr.resolve_exercise_name(name), "equipment": equipment}
 
 def parse_tag(tag_str):
     tag_str = tag_str.strip()
@@ -116,9 +117,12 @@ def parse_cardio_line(text):
 def parse_workout(text):
     lines = [line for line in text.strip().split("\n") if line.strip()]
 
+    if not lines:
+        raise ValueError(tr.t("empty_workout_text"))
+
     header = parse_header(lines[0])
     if header is None:
-        raise ValueError
+        raise ValueError(tr.t("invalid_header_format"))
 
     exercises = []
     current_exercise = None
@@ -137,7 +141,7 @@ def parse_workout(text):
         else:
             exercise_info = parse_exercise_line(line)
             if exercise_info is None:
-                raise ValueError(f"The Line Couldn't be interpreted: {line!r}")
+                raise ValueError(tr.t("unrecognized_line", line=line))
             current_exercise = {
                 "name": exercise_info["name"],
                 "equipment": exercise_info["equipment"],
@@ -147,7 +151,7 @@ def parse_workout(text):
 
     total_sets = sum(len(ex["sets"]) for ex in exercises)
     if not exercises or total_sets == 0:
-        raise ValueError
+        raise ValueError(tr.t("no_exercises_or_sets"))
 
     return {
         "date": header["date"],
@@ -173,7 +177,7 @@ def parse_alt_workout(text):
         if ex_match:
             name, weight = ex_match.groups()
             current_weight = float(weight)
-            current_exercise = {"name": name.strip(), "equipment": None, "sets": []}
+            current_exercise = {"name": tr.resolve_exercise_name(name), "equipment": None, "sets": []}
             exercises.append(current_exercise)
             continue
 
@@ -193,7 +197,7 @@ def parse_alt_workout(text):
 
     total_sets = sum(len(ex["sets"]) for ex in exercises)
     if not exercises or total_sets == 0:
-        raise ValueError("No Exercise Found or No Sets Found in the Workout!")
+        raise ValueError(tr.t("no_exercises_or_sets"))
 
     return {
         "date": date.today().strftime("%d/%m/%Y"),
@@ -205,13 +209,12 @@ KNOWN_PARSERS = [parse_workout, parse_alt_workout]
 
 
 def parse_any_workout(text):
-    errors = []
     for parser in KNOWN_PARSERS:
         try:
             return parser(text)
-        except Exception as e:
-            errors.append(str(e))
-    raise ValueError(f"No parser succeeded: {errors}")
+        except Exception:
+            continue
+    raise ValueError(tr.t("invalid_workout_format"))
 
 if __name__ == "__main__":
     text = ("""""")

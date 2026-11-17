@@ -123,9 +123,7 @@ def _check(response, ok_codes):
         raise ValueError(_error_message(response))
     raise ApiError(_error_message(response))
 
-
 def _to_iso(date):
-    """Backbone API accepts dates in YYYY-MM-DD format"""
     if hasattr(date, "isoformat"):
         return date.isoformat()
     if isinstance(date, str):
@@ -212,7 +210,6 @@ def get_prs(user_id):
 # PARSER FAILURES
 
 def send_parser_failure(raw_text, reason):
-    """Fire-and-forget: sends text the parser couldn't handle. Never raises."""
     if not _token:
         return
 
@@ -226,3 +223,41 @@ def send_parser_failure(raw_text, reason):
             pass
 
     threading.Thread(target=_send, daemon=True).start()
+
+# LANGUAGE & PROFILE
+
+def load_saved_language() -> str:
+    for folder in _session_dirs():
+        path = os.path.join(folder, "preferences.json")
+        try:
+            with open(path, encoding="utf-8") as f:
+                lang = json.load(f).get("language")
+        except (OSError, ValueError):
+            continue
+        if isinstance(lang, str) and lang:
+            return lang
+    return "en"
+
+
+def save_language(language: str) -> None:
+    payload = json.dumps({"language": language})
+    for folder in _session_dirs():
+        try:
+            os.makedirs(folder, exist_ok=True)
+            with open(os.path.join(folder, "preferences.json"), "w", encoding="utf-8") as f:
+                f.write(payload)
+        except OSError:
+            continue
+
+
+def get_me() -> dict:
+    r = _request("GET", "/me")
+    _check(r, (200,))
+    return r.json()
+
+
+def update_user_language(language: str) -> bool:
+    r = _request("PATCH", "/users/language", json={"language": language})
+    _check(r, (200,))
+    save_language(language)
+    return True

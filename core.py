@@ -1,9 +1,8 @@
 import os
 import json
-
+import i18n as tr
 import api_client as db
 import datetime
-from difflib import get_close_matches
 from platformdirs import user_data_dir
 
 folder = user_data_dir(appname="BackBone", appauthor="angeLoon DEV")
@@ -25,26 +24,25 @@ def save_data(path, data):
 def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
     valid_exercises_lower = [ex.lower() for ex in valid_exercises]
     if exercise not in valid_exercises_lower:
-        return False, f"{exercise} does not exist"
-
+        return False, tr.t("exercise_not_found", exercise=tr.t_ex(exercise))
     try:
         weight = float(weight_input)
         reps = float(reps_input)
     except ValueError:
-        return False, "Invalid Numeric Value"
+        return False, tr.t("invalid_numeric_value")
     if weight < 0 or reps <= 0:
-        return False, "Value must be 1 or More"
+        return False, tr.t("value_min_one")
 
     if reps != int(reps):
-        return False, "Invalid Numeric Value"
+        return False, tr.t("invalid_numeric_value")
 
     if reps > 99:
-        return False, "Reps must be 2 digits or less"
+        return False, tr.t("reps_max_digits")
     reps = int(reps)
 
     exercise_id = db.get_exercise_id(exercise)
     if exercise_id is None:
-        return False, f"{exercise} does not exist"
+        return False, tr.t("exercise_not_found", exercise=tr.t_ex(exercise))
 
     if date is None:
         date = datetime.date.today().isoformat()
@@ -57,12 +55,12 @@ def log_PR(exercise, weight_input, reps_input, prs, valid_exercises, date=None):
     except (ValueError, db.ApiError) as error:
         return False, str(error)
     if not isinstance(loaded, dict):
-        return False, "Unexpected PR data from the server"
+        return False, tr.t("unexpected_pr_data")
 
     prs.clear()
     prs.update(loaded)
 
-    return True, f"Your PR on {exercise.title()} is {weight}kg {reps:g}x reps!" 
+    return True, tr.t("pr_saved_success", exercise=tr.t_ex(exercise), weight=f"{weight:g}", reps=reps)
 
 # Function to delete a PR entry for a specific exercise from the data and save the updated data back to the file
 
@@ -142,7 +140,7 @@ def next_goal_calculation(prs):
         current_weight = data["weight"]
         current_reps = data["reps"]
 
-        if current_reps >=10:
+        if current_reps >= 10:
             goal_weight = current_weight + 5
             goal_reps = 6
         else:
@@ -170,6 +168,7 @@ def to_iso_date(date_text):
         return None
 
 # Registers a PR when the best valid set of an exercise beats the stored one
+
 def process_workout(workout, prs, valid_exercises):
     logged_prs = []
     date = to_iso_date(workout.get("date"))

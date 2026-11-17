@@ -8,7 +8,7 @@
   A workout tracker for Android and desktop where you just paste your training log and the app does the rest.
 </p>
 
-> 🚧 **Status:** in development (v1.21a). Built solo with Python and Flet.
+> 🚧 **Status:** in development (v1.30a). Built solo with Python and Flet.
 
 ## Why I built it
 
@@ -117,11 +117,11 @@ Workouts the parser understands are never sent. Parser feedback is linked to you
 - [x] Login screen in the app
 - [x] Switch accounts, exercises and PRs from local SQLite to the API
 - [x] Report workouts the parser can't understand (`parser_failure` table and `POST /parser-failures`)
+- [x] Exercise name translation stopped working after the move to a database and needs to be reworked
+- [x] Connect different exercise names (translations) to a single output
 - [ ] Privacy notice on the sign-up screen
 - [ ] Limit how many parser reports one user can send per day
 - [ ] Move the workout log (JSON) to the online database
-- [ ] Exercise name translation stopped working after the move to a database and needs to be reworked
-- [ ] Connect different exercise names (translations) to a single output
 - [ ] Add a variety of exercises
 
 ## License

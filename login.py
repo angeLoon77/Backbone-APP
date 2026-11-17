@@ -1,6 +1,7 @@
 from pathlib import Path
 import flet as ft
 import api_client
+import i18n as tr
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 
@@ -24,9 +25,9 @@ def build(page: ft.Page, on_success, initial_message=None):
     registering = {"value": False}
     signed_in = {"value": False}
 
-    heading = ft.Text("Welcome back", size=28, weight=ft.FontWeight.W_700)
+    heading = ft.Text(tr.t("welcome_back"), size=28, weight=ft.FontWeight.W_700)
     subtitle = ft.Text(
-        "Sign in to keep your PRs and workouts.",
+        tr.t("sign_in_to_keep_your_prs_and_workouts"),
         size=14,
         color=ft.Colors.GREY_400,
         text_align=ft.TextAlign.CENTER,
@@ -60,8 +61,8 @@ def build(page: ft.Page, on_success, initial_message=None):
         status_text.value = ""
 
     username = ft.TextField(
-        label="Username",
-        hint_text="At least 3 characters",
+        label=tr.t("username"),
+        hint_text=tr.t("at_least_3_characters"),
         width=320,
         autofocus=True,
         border_radius=12,
@@ -74,8 +75,8 @@ def build(page: ft.Page, on_success, initial_message=None):
         autofill_hints=ft.AutofillHint.USERNAME,
     )
     password = ft.TextField(
-        label="Password",
-        hint_text="At least 6 characters",
+        label=tr.t("password"),
+        hint_text=tr.t("at_least_6_characters"),
         width=320,
         password=True,
         can_reveal_password=True,
@@ -89,7 +90,8 @@ def build(page: ft.Page, on_success, initial_message=None):
         autofill_hints=[ft.AutofillHint.PASSWORD],
     )
     confirm = ft.TextField(
-        label="Confirm password",
+        label=tr.t("confirm_password"),
+        hint_text=tr.t("confirm_your_password"),
         width=320,
         password=True,
         can_reveal_password=True,
@@ -105,7 +107,7 @@ def build(page: ft.Page, on_success, initial_message=None):
     )
 
     submit_button = ft.Button(
-        "Sign in",
+        tr.t("sign_in"),
         icon=ft.Icons.ARROW_FORWARD,
         width=320,
         height=48,
@@ -113,8 +115,8 @@ def build(page: ft.Page, on_success, initial_message=None):
         bgcolor=ACCENT,
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12)),
     )
-    switch_prompt = ft.Text("New here?", size=13, color=ft.Colors.GREY_400)
-    switch_button = ft.TextButton("Create an account")
+    switch_prompt = ft.Text(tr.t("new_here"), size=13, color=ft.Colors.GREY_400)
+    switch_button = ft.TextButton(tr.t("create_an_account"))
     switch_row = ft.Row(
         [switch_prompt, switch_button],
         alignment=ft.MainAxisAlignment.CENTER,
@@ -129,10 +131,10 @@ def build(page: ft.Page, on_success, initial_message=None):
         for field in fields:
             field.disabled = busy
         if busy:
-            submit_button.content = "Creating account..." if registering["value"] else "Signing in..."
+            submit_button.content = tr.t("creating_account") if registering["value"] else tr.t("signing_in")
             submit_button.icon = None
         elif not signed_in["value"]:
-            submit_button.content = "Create account" if registering["value"] else "Sign in"
+            submit_button.content = tr.t("create_account") if registering["value"] else tr.t("sign_in")
             submit_button.icon = ft.Icons.ARROW_FORWARD
 
     def apply_mode():
@@ -140,18 +142,18 @@ def build(page: ft.Page, on_success, initial_message=None):
         confirm.visible = registering["value"]
         confirm.value = ""
         if registering["value"]:
-            heading.value = "Create your account"
-            subtitle.value = "A username and password are enough to start."
-            submit_button.content = "Create account"
-            switch_prompt.value = "Already have an account?"
-            switch_button.content = "Sign in"
+            heading.value = tr.t("create_your_account")
+            subtitle.value = tr.t("username_and_password_are_enough_to_start")
+            submit_button.content = tr.t("create_account")
+            switch_prompt.value = tr.t("already_have_an_account")
+            switch_button.content = tr.t("sign_in")
             password.autofill_hints = [ft.AutofillHint.NEW_PASSWORD]
         else:
-            heading.value = "Welcome back"
-            subtitle.value = "Sign in to keep your PRs and workouts."
-            submit_button.content = "Sign in"
-            switch_prompt.value = "New here?"
-            switch_button.content = "Create an account"
+            heading.value = tr.t("welcome_back")
+            subtitle.value = tr.t("sign_in_to_keep_your_prs_and_workouts")
+            submit_button.content = tr.t("sign_in")
+            switch_prompt.value = tr.t("new_here")
+            switch_button.content = tr.t("create_an_account")
             password.autofill_hints = [ft.AutofillHint.PASSWORD]
         page.update()
 
@@ -165,20 +167,20 @@ def build(page: ft.Page, on_success, initial_message=None):
         name = (username.value or "").strip()
         secret = password.value or ""
         if not name or not secret:
-            return "Enter your username and password."
+            return (tr.t("enter_username_and_password"))
         if len(name) < 3:
-            return "Username needs at least 3 characters."
+            return (tr.t("username_min_length"))
         if len(secret) < 6:
-            return "Password needs at least 6 characters."
+            return (tr.t("password_min_length"))
         if registering["value"] and secret != (confirm.value or ""):
-            return "Passwords don't match."
+            return (tr.t("passwords_dont_match"))
         return None
 
     def finish(message, ok=False):
         show_status(message, ok=ok)
         if ok:
             signed_in["value"] = True
-            submit_button.content = "Signed in"
+            submit_button.content = tr.t("signed_in")
             submit_button.icon = ft.Icons.CHECK
             submit_button.disabled = True
             switch_row.visible = False
@@ -195,13 +197,13 @@ def build(page: ft.Page, on_success, initial_message=None):
             if registering["value"]:
                 api_client.register(name, secret)
             if not api_client.login(name, secret):
-                finish("That username and password don't match.")
+                finish(tr.t("that_username_and_password_dont_match"))
                 return
             on_success()
         except ValueError as error:
-            finish(str(error))
+            finish(tr.t("an_error_occurred_while_processing_your_request"))
         except api_client.ApiError as error:
-            finish(str(error))
+            finish(tr.t("an_error_occurred_while_processing_your_request"))
 
     def submit(e):
         if signed_in["value"] or submit_button.disabled:

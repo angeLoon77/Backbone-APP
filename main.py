@@ -1,13 +1,14 @@
+import asyncio
+import random
 from pathlib import Path
-
 import flet as ft
 import core as core
 import workout_parser as wp
 import api_client as db
 import login as login_screen
-import translations as tr
+import i18n as tr
 
-ICON = str(Path(__file__).resolve().parent / "assets" / "icon.png")
+ICON_ICO = str(Path(__file__).resolve().parent / "assets" / "icon.ico")
 
 ACCENT = "#03a800"
 SURFACE = "#121212"
@@ -84,11 +85,11 @@ def surface(**kwargs):
     )
 
 
-def start_app(page: ft.Page, on_session_expired, on_logout=None):
-    exercise_rows = db.get_exercises()
+def start_app(page: ft.Page, on_session_expired, on_logout=None, cached_exercises=None, cached_prs=None):
+    exercise_rows = cached_exercises if cached_exercises is not None else db.get_exercises()
     valid_exercises = [name for name, group in exercise_rows]
     exercise_groups = {name: group for name, group in exercise_rows}
-    prs = db.get_prs(1)
+    prs = cached_prs if cached_prs is not None else db.get_prs(1)
     if not isinstance(prs, dict):
         raise db.ApiError("Unexpected PR data from the server")
 
@@ -166,9 +167,9 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
             key=lambda item: (float(item[1]["weight"]), int(item[1]["reps"])),
         )
         heaviest_value.value = f"{format_weight(info['weight'])} kg"
-        heaviest_name.value = name.title()
+        heaviest_name.value = tr.t_ex(name)
 
-    def update_pr_logs():
+    def update_pr_logs():   
         refresh_summary()
         pr_search.visible = bool(prs)
         if not prs:
@@ -179,9 +180,9 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
         rows = [
             (exercise, info)
             for exercise, info in prs.items()
-            if query in exercise.lower()
+            if query in exercise.lower() or query in tr.t_ex(exercise).lower()
         ]
-        rows.sort(key=lambda item: item[0])
+        rows.sort(key=lambda item: tr.t_ex(item[0]).lower())
         if not rows:
             fill_empty(pr_logs, ft.Icons.SEARCH_OFF, tr.t("no_matches"))
             return
@@ -190,7 +191,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
 
         for exercise, info in rows:
             group = exercise_groups.get(exercise)
-            group_label = str(group).replace("_", " ").title() if group else ""
+            group_label = tr.t_group(group)
 
             def delete_pr(ex_name):
                 def run():
@@ -208,7 +209,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
 
                 ask_confirm(
                     tr.t("delete_pr_title"),
-                    tr.t("delete_pr_body", exercise=ex_name.title()),
+                    tr.t("delete_pr_body", exercise=tr.t_ex(ex_name)),
                     run,
                 )
 
@@ -225,7 +226,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
                             ),
                             ft.Column(
                                 [
-                                    ft.Text(exercise.title(), size=16, weight=ft.FontWeight.W_600),
+                                    ft.Text(tr.t_ex(exercise), size=16, weight=ft.FontWeight.W_600),
                                     ft.Text(
                                         " · ".join(
                                             part
@@ -265,21 +266,21 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
 
     exercise_field = styled_field(
         label=tr.t("exercise_label"),
-        hint_text="bench press",
+        hint_text="",
         prefix_icon=ft.Icons.SEARCH,
         autofocus=True,
         width=300,
     )
     weight_field = styled_field(
         label=tr.t("weight_label"),
-        hint_text="60",
+        hint_text="",
         prefix_icon=ft.Icons.FITNESS_CENTER,
         keyboard_type=ft.KeyboardType.NUMBER,
         width=300,
     )
     reps_field = styled_field(
         label=tr.t("reps_label"),
-        hint_text="10",
+        hint_text="",
         prefix_icon=ft.Icons.REPEAT,
         keyboard_type=ft.KeyboardType.NUMBER,
         width=300,
@@ -297,7 +298,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
     )
 
     def select_exercise(name):
-        exercise_field.value = name
+        exercise_field.value = tr.t_ex(name)
         match_box.visible = False
         log_error.visible = False
         page.update()
@@ -310,14 +311,13 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
             match_box.visible = False
             page.update()
             return
-        matches = [name for name in valid_exercises if query in name][:5]
-        if matches == [query]:
+        matches = [name for name in valid_exercises if query in name or query in tr.t_ex(name).lower()][:5]
+        if len(matches) == 1 and query in (matches[0], tr.t_ex(matches[0]).lower()):
             match_box.visible = False
             page.update()
             return
         for name in matches:
-            group = exercise_groups.get(name)
-            group_label = str(group).replace("_", " ").title() if group else ""
+            group_label = tr.t_group(exercise_groups.get(name))
             exercise_matches.controls.append(
                 ft.Container(
                     ink=True,
@@ -325,7 +325,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
                     on_click=lambda e, picked=name: select_exercise(picked),
                     content=ft.Row(
                         [
-                            ft.Text(name.title(), expand=True, size=14),
+                            ft.Text(tr.t_ex(name), expand=True, size=14),
                             ft.Text(group_label, size=12, color=ft.Colors.GREY_500),
                         ]
                     ),
@@ -339,7 +339,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
     def save_pr(e):
         try:
             success, msg = core.log_PR(
-                (exercise_field.value or "").strip().lower(),
+                tr.resolve_exercise_name(exercise_field.value or ""),
                 weight_field.value,
                 reps_field.value,
                 prs,
@@ -358,6 +358,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
             page.update()
             return
 
+        rotating_hint["active"] = False
         page.pop_dialog()
         exercise_field.value = ""
         weight_field.value = ""
@@ -370,9 +371,56 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
     weight_field.on_submit = save_pr
     reps_field.on_submit = save_pr
 
+    HINT_PROFILES = {
+        "legs": (["80", "100", "120", "140", "180"], ["6", "8", "10", "12"]),
+        "back": (["50", "60", "70", "80", "100"], ["6", "8", "10", "12"]),
+        "chest": (["40", "50", "60", "70", "80"], ["6", "8", "10", "12"]),
+        "glutes": (["60", "80", "100", "120"], ["8", "10", "12"]),
+        "shoulders": (["12", "14", "16", "20", "30"], ["8", "10", "12"]),
+        "biceps": (["12", "14", "16", "20", "25"], ["8", "10", "12"]),
+        "triceps": (["20", "25", "30", "35", "40"], ["8", "10", "12"]),
+        "calves": (["40", "60", "80", "100"], ["12", "15", "20"]),
+        "forearms": (["10", "12", "15", "20"], ["12", "15", "20"]),
+        "core": (["15", "20", "25", "30"], ["12", "15", "20"]),
+        "traps": (["24", "30", "36", "40"], ["10", "12", "15"]),
+    }
+
+    def apply_random_hint():
+        if not valid_exercises:
+            return
+        picked = random.choice(valid_exercises)
+        group = exercise_groups.get(picked)
+        weights, reps_list = HINT_PROFILES.get(group, (["40", "60", "80"], ["8", "10", "12"]))
+        if not exercise_field.value:
+            exercise_field.hint_text = tr.t_ex(picked)
+        if not weight_field.value:
+            weight_field.hint_text = random.choice(weights)
+        if not reps_field.value:
+            reps_field.hint_text = random.choice(reps_list)
+
+    rotating_hint = {"active": False}
+
+    def close_log_dialog(e=None):
+        rotating_hint["active"] = False
+        page.pop_dialog()
+
+    async def rotate_exercise_hint():
+            while rotating_hint["active"]:
+                await asyncio.sleep(2.5)
+                if not rotating_hint["active"]:
+                    break
+                apply_random_hint()
+                try:
+                    exercise_field.update()
+                    weight_field.update()
+                    reps_field.update()
+                except Exception:
+                    break
+
     log_dialog = ft.AlertDialog(
         modal=True,
         title=ft.Text(tr.t("tab_log_prs")),
+        on_dismiss=close_log_dialog,
         content=ft.Column(
             tight=True,
             spacing=12,
@@ -396,7 +444,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
             ],
         ),
         actions=[
-            ft.TextButton(tr.t("cancel_button"), on_click=lambda e: page.pop_dialog()),
+            ft.TextButton(tr.t("cancel_button"), on_click=close_log_dialog),
         ],
     )
 
@@ -404,9 +452,12 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
         exercise_field.value = ""
         weight_field.value = ""
         reps_field.value = ""
+        apply_random_hint()
         log_error.visible = False
         match_box.visible = False
+        rotating_hint["active"] = True
         page.show_dialog(log_dialog)
+        page.run_task(rotate_exercise_hint)
 
     goals_list = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
@@ -418,7 +469,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
         begin_list(goals_list)
 
         goals = core.next_goal_calculation(prs)
-        for exercise, next_goal in sorted(goals.items()):
+        for exercise, next_goal in sorted(goals.items(), key=lambda item: tr.t_ex(item[0]).lower()):
             current = prs[exercise]
             same_weight = float(next_goal["weight"]) == float(current["weight"])
             if same_weight:
@@ -433,7 +484,7 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
                         [
                             ft.Row(
                                 [
-                                    ft.Text(exercise.title(), size=16, weight=ft.FontWeight.W_600, expand=True),
+                                    ft.Text(tr.t_ex(exercise), size=16, weight=ft.FontWeight.W_600, expand=True),
                                     ft.Container(
                                         bgcolor="#143318",
                                         border_radius=20,
@@ -506,8 +557,6 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
         issues = core.find_parser_issues(workout, valid_exercises)
         if issues:
             db.send_parser_failure(text, "; ".join(issues)[:200])
-
-        core.log_workout(core.path_workouts, workout, text)
 
         core.log_workout(core.path_workouts, workout, text)
         try:
@@ -752,6 +801,44 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
         on_click=open_log_dialog,
     )
 
+    def sync_remote_language(lang):
+        try:
+            db.update_user_language(lang)
+        except db.SessionExpired:
+            on_session_expired()
+        except db.ApiError:
+            pass
+
+    def switch_language(new_lang):
+        if new_lang == tr.get_current_language():
+            return
+        tr.load_language(new_lang)
+        db.save_language(new_lang)
+        page.run_thread(lambda: sync_remote_language(new_lang))
+        start_app(
+            page,
+            on_session_expired=on_session_expired,
+            on_logout=on_logout,
+            cached_exercises=exercise_rows,
+            cached_prs=prs,
+        )
+
+    lang_button = ft.PopupMenuButton(
+        icon=ft.Icons.LANGUAGE,
+        icon_color=ft.Colors.GREY_400,
+        tooltip=tr.t("language_tooltip"),
+        items=[
+            ft.PopupMenuItem(
+                content=ft.Text("Português (PT)"),
+                on_click=lambda e: switch_language("pt"),
+            ),
+            ft.PopupMenuItem(
+                content=ft.Text("English (EN)"),
+                on_click=lambda e: switch_language("en"),
+            ),
+        ],
+    )
+
     nav_items = [
         (ft.Icons.EMOJI_EVENTS_OUTLINED, ft.Icons.EMOJI_EVENTS, tr.t("nav_prs")),
         (ft.Icons.FLAG_OUTLINED, ft.Icons.FLAG, tr.t("nav_goals")),
@@ -825,36 +912,36 @@ def start_app(page: ft.Page, on_session_expired, on_logout=None):
     )
 
     header = ft.Container(
-        padding=ft.Padding.only(left=20, right=12, top=6, bottom=2),
-        content=ft.Row(
-            [
-                ft.Column(
-                    [
-                        ft.Text(
-                            "BACKBONE",
-                            size=11,
-                            weight=ft.FontWeight.W_700,
-                            color=ACCENT,
-                            style=ft.TextStyle(letter_spacing=2.4),
-                        ),
-                        section_title,
-                    ],
-                    spacing=0,
-                    expand=True,
-                ),
-                add_button,
-                ft.IconButton(
-                    icon=ft.Icons.LOGOUT,
-                    icon_color=ft.Colors.GREY_500,
-                    tooltip=tr.t("sign_out"),
-                    visible=on_logout is not None,
-                    on_click=lambda e: on_logout(),
-                ),
-            ],
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-        ),
-    )
-
+            padding=ft.Padding.only(left=20, right=12, top=6, bottom=2),
+            content=ft.Row(
+                [
+                    ft.Column(
+                        [
+                            ft.Text(
+                                "BACKBONE",
+                                size=11,
+                                weight=ft.FontWeight.W_700,
+                                color=ACCENT,
+                                style=ft.TextStyle(letter_spacing=2.4),
+                            ),
+                            section_title,
+                        ],
+                        spacing=0,
+                        expand=True,
+                    ),
+                    lang_button,
+                    add_button,
+                    ft.IconButton(
+                        icon=ft.Icons.LOGOUT,
+                        icon_color=ft.Colors.GREY_500,
+                        tooltip=tr.t("sign_out"),
+                        visible=on_logout is not None,
+                        on_click=lambda e: on_logout(),
+                    ),
+                ],
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+        )
     page.add(
         ft.SafeArea(
             expand=True,
@@ -878,7 +965,7 @@ def main(page: ft.Page):
     page.window.height = 750
     page.window.min_width = 380
     page.window.min_height = 640
-    page.window.icon = ICON
+    page.window.icon = ICON_ICO
     page.window.resizable = True
 
     prefs = ft.SharedPreferences()
@@ -943,20 +1030,33 @@ def main(page: ft.Page):
         )
 
     def open_app():
-        db.remember_session()
-        page.run_task(save_pref)
-        try:
-            start_app(
-                page,
-                on_session_expired=lambda: show_login("Session expired, please log in again"),
-                on_logout=show_login,
-            )
-        except db.SessionExpired:
-            show_login("Session expired, please log in again")
-        except db.ApiError as error:
-            show_login(str(error), forget=False)
+            db.remember_session()
+            page.run_task(save_pref)
+            try:
+                try:
+                    me = db.get_me()
+                    remote_lang = me.get("preferred_language")
+                    if remote_lang and remote_lang != tr.get_current_language():
+                        tr.load_language(remote_lang)
+                        db.save_language(remote_lang)
+                except db.SessionExpired:
+                    show_login(tr.t("session_expired"))
+                    return
+                except db.ApiError:
+                    pass
+
+                start_app(
+                    page,
+                    on_session_expired=lambda: show_login(tr.t("session_expired")),
+                    on_logout=show_login,
+                )
+            except db.SessionExpired:
+                show_login(tr.t("session_expired"))
+            except db.ApiError as error:
+                show_login(str(error), forget=False)
 
     async def boot():
+        tr.load_language(db.load_saved_language())
         token = db.load_saved_token()
         if not token:
             try:
